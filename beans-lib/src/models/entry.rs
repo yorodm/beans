@@ -165,29 +165,29 @@ impl LedgerEntryBuilder {
     /// Builds the ledger entry.
     pub fn build(self) -> BeansResult<LedgerEntry> {
         let now = Utc::now();
-        
+
         let name = self.name.ok_or_else(|| {
             BeansError::validation("Entry name is required")
         })?;
-        
+
         if name.trim().is_empty() {
             return Err(BeansError::validation(
                 "Entry name cannot be empty"
             ));
         }
-        
+
         let currency = self.currency.ok_or_else(|| {
             BeansError::validation("Entry currency is required")
         })?;
-        
+
         let amount = self.amount.ok_or_else(|| {
             BeansError::validation("Entry amount is required")
         })?;
-        
+
         let entry_type = self.entry_type.ok_or_else(|| {
             BeansError::validation("Entry type is required")
         })?;
-        
+
         Ok(LedgerEntry {
             id: self.id.unwrap_or_else(Uuid::new_v4),
             date: self.date.unwrap_or_else(Utc::now),
@@ -206,7 +206,7 @@ impl LedgerEntryBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rust_decimal_macros::dec;
+    use rust_decimal::dec;
 
     #[test]
     fn test_entry_builder() {

@@ -24,7 +24,7 @@
 //!
 //! ```no_run
 //! use beans_lib::prelude::*;
-//! use rust_decimal_macros::dec;
+//! use rust_decimal::dec;
 //!
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! // Create or open a ledger
@@ -56,7 +56,7 @@
 //!
 //! ```no_run
 //! use beans_lib::prelude::*;
-//! use rust_decimal_macros::dec;
+//! use rust_decimal::dec;
 //!
 //! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
 //! let converter = CurrencyConverter::default();
@@ -101,9 +101,9 @@
 //! ```
 
 // Public modules
-pub mod error;
 pub mod currency;
 pub mod database;
+pub mod error;
 pub mod ledger;
 pub mod models;
 pub mod reporting;
@@ -119,9 +119,9 @@ pub mod prelude {
     //! ```
 
     // Re-export core types
-    pub use crate::error::{BeansError, BeansResult};
     pub use crate::currency::{CurrencyConverter, ExchangeRateCache};
     pub use crate::database::{EntryFilter, Repository};
+    pub use crate::error::{BeansError, BeansResult};
     pub use crate::ledger::LedgerManager;
     pub use crate::models::{Currency, EntryType, LedgerEntry, LedgerEntryBuilder, Tag};
     pub use crate::reporting::{
