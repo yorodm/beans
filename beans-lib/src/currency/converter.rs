@@ -29,17 +29,17 @@ impl CurrencyConverter {
     }
 
     /// Gets the exchange rate between two currencies.
-    pub async fn get_exchange_rate(&self, from: &Currency, to: &Currency) -> BeansResult<f64> {
+    pub async fn get_exchange_rate<'a>(&self, from: &Currency<'a>, to: &Currency<'a>) -> BeansResult<f64> {
         // Placeholder implementation - will be expanded in final version
-        let from_symbol = from.to_string();
-        let to_symbol = to.to_string();
+        let from_code = from.code();
+        let to_code = to.code();
         
-        if from_symbol == to_symbol {
+        if from_code == to_code {
             return Ok(1.0);
         }
         
         // Check cache first
-        if let Some(rate) = self.cache.get(&from_symbol, &to_symbol) {
+        if let Some(rate) = self.cache.get(from_code, to_code) {
             return Ok(rate);
         }
         
@@ -48,17 +48,17 @@ impl CurrencyConverter {
     }
 
     /// Converts an amount from one currency to another.
-    pub async fn convert_amount(
+    pub async fn convert_amount<'a>(
         &self,
         amount: Decimal,
-        from: &Currency,
-        to: &Currency,
+        from: &Currency<'a>,
+        to: &Currency<'a>,
     ) -> BeansResult<Decimal> {
         // Placeholder implementation - will be expanded in final version
-        let from_symbol = from.to_string();
-        let to_symbol = to.to_string();
+        let from_code = from.code();
+        let to_code = to.code();
         
-        if from_symbol == to_symbol {
+        if from_code == to_code {
             return Ok(amount);
         }
         
