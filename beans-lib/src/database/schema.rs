@@ -103,7 +103,9 @@ fn create_initial_schema(conn: &Connection) -> BeansResult<()> {
         .as_string();
 
     conn.execute(&create_idx_entries_entry_type, [])
-        .map_err(|e| BeansError::database(format!("Failed to create idx_entries_entry_type: {}", e)))?;
+        .map_err(|e| {
+            BeansError::database(format!("Failed to create idx_entries_entry_type: {}", e))
+        })?;
 
     let create_idx_entries_currency = sql::CreateIndex::new()
         .create_index_if_not_exists("idx_entries_currency")
@@ -112,7 +114,9 @@ fn create_initial_schema(conn: &Connection) -> BeansResult<()> {
         .as_string();
 
     conn.execute(&create_idx_entries_currency, [])
-        .map_err(|e| BeansError::database(format!("Failed to create idx_entries_currency: {}", e)))?;
+        .map_err(|e| {
+            BeansError::database(format!("Failed to create idx_entries_currency: {}", e))
+        })?;
 
     let create_idx_tags_name = sql::CreateIndex::new()
         .create_index_if_not_exists("idx_tags_name")
@@ -188,7 +192,6 @@ fn set_schema_version(conn: &Connection, version: i64) -> BeansResult<()> {
     // Note: INSERT OR REPLACE is SQLite-specific syntax
     // sql_query_builder doesn't have a direct method for this, so we use raw SQL for this specific case
     let insert_query = sql::Insert::new()
-        .insert_into("schema_version")
         .raw("INSERT OR REPLACE INTO schema_version (id, version, updated_at)")
         .values("(1, ?, ?)")
         .as_string();

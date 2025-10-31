@@ -77,8 +77,7 @@ impl SQLiteRepository {
             Err(rusqlite::Error::QueryReturnedNoRows) => {
                 // Tag doesn't exist, create it
                 let insert_query = sql::Insert::new()
-                    .insert_into("tags")
-                    .columns("name")
+                    .insert_into("tags (name)")
                     .values("(?)")
                     .as_string();
 
@@ -107,9 +106,7 @@ impl SQLiteRepository {
             let tag_id = self.get_or_create_tag_id(tx, tag.name())?;
 
             let insert_query = sql::Insert::new()
-                .insert_into("entry_tags")
-                .columns("entry_id")
-                .columns("tag_id")
+                .insert_into("entry_tags (entry_id, tag_id)")
                 .values("(?, ?)")
                 .as_string();
 
@@ -244,9 +241,14 @@ impl SQLiteRepository {
     }
 
     /// Builds a SELECT query with filters applied.
-    fn build_filtered_query(&self, filter: &EntryFilter) -> (sql::Select, Vec<Box<dyn rusqlite::ToSql>>) {
+    fn build_filtered_query(
+        &self,
+        filter: &EntryFilter,
+    ) -> (sql::Select, Vec<Box<dyn rusqlite::ToSql>>) {
         let mut select = sql::Select::new()
-            .select("id, date, name, currency, amount, description, entry_type, created_at, updated_at")
+            .select(
+                "id, date, name, currency, amount, description, entry_type, created_at, updated_at",
+            )
             .from("entries");
 
         let mut params: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
@@ -308,8 +310,7 @@ impl Repository for SQLiteRepository {
 
         // Insert the entry
         let insert_query = sql::Insert::new()
-            .insert_into("entries")
-            .columns("id, date, name, currency, amount, description, entry_type, created_at, updated_at")
+            .insert_into("entries (id, date, name, currency, amount, description, entry_type, created_at, updated_at)")
             .values("(?, ?, ?, ?, ?, ?, ?, ?, ?)")
             .as_string();
 
@@ -349,7 +350,9 @@ impl Repository for SQLiteRepository {
             .map_err(|e| BeansError::database(format!("Failed to start transaction: {}", e)))?;
 
         let select_query = sql::Select::new()
-            .select("id, date, name, currency, amount, description, entry_type, created_at, updated_at")
+            .select(
+                "id, date, name, currency, amount, description, entry_type, created_at, updated_at",
+            )
             .from("entries")
             .where_clause("id = ?")
             .as_string();
@@ -384,9 +387,7 @@ impl Repository for SQLiteRepository {
             .as_string();
 
         let exists: bool = tx
-            .query_row(&check_query, params![entry.id().to_string()], |_| {
-                Ok(true)
-            })
+            .query_row(&check_query, params![entry.id().to_string()], |_| Ok(true))
             .unwrap_or(false);
 
         if !exists {
@@ -521,16 +522,14 @@ impl Repository for SQLiteRepository {
 
         // Build the filtered query but change SELECT to COUNT(*)
         let (select, params) = self.build_filtered_query(filter);
-        
+
         // Get the WHERE clause from the select and build a COUNT query
         let select_str = select.as_string();
-        
+
         // We need to replace the SELECT clause with COUNT(*)
         // Since sql_query_builder doesn't have a direct way to do this,
         // we'll build a new query using the filter conditions
-        let mut count_select = sql::Select::new()
-            .select("COUNT(*)")
-            .from("entries");
+        let mut count_select = sql::Select::new().select("COUNT(*)").from("entries");
 
         // Re-apply the same filters
         if let Some(start_date) = filter.start_date {
