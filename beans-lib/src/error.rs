@@ -11,9 +11,13 @@ pub type BeansResult<T> = Result<T, BeansError>;
 /// Main error type for the Beans library.
 #[derive(Error, Debug)]
 pub enum BeansError {
-    /// Database-related errors.
+    /// Database-related errors from SQLite.
     #[error("Database error: {0}")]
     Database(#[from] rusqlite::Error),
+
+    /// Custom database errors with detailed messages.
+    #[error("Database error: {0}")]
+    DatabaseCustom(String),
 
     /// I/O errors when working with files.
     #[error("I/O error: {0}")]
@@ -44,8 +48,8 @@ pub enum BeansError {
     InvalidLedgerFormat(String),
 
     /// Entry not found in the ledger.
-    #[error("Entry not found with ID: {0}")]
-    EntryNotFound(String),
+    #[error("Entry not found: {0}")]
+    NotFound(String),
 
     /// Currency conversion rate not available.
     #[error("Exchange rate not available for {from} to {to}")]
@@ -77,6 +81,16 @@ impl BeansError {
     /// Creates a currency error with a custom message.
     pub fn currency(msg: impl Into<String>) -> Self {
         Self::Currency(msg.into())
+    }
+
+    /// Creates a database error with a custom message.
+    pub fn database(msg: impl Into<String>) -> Self {
+        Self::DatabaseCustom(msg.into())
+    }
+
+    /// Creates a not found error with a custom message.
+    pub fn not_found(msg: impl Into<String>) -> Self {
+        Self::NotFound(msg.into())
     }
 
     /// Creates a generic error with a custom message.
