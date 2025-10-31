@@ -163,6 +163,17 @@ MIT License - see LICENSE file for details
 
 This project is currently in early development. Phase 1 (core library) must be completed and reviewed before Phase 2 (UI) begins.
 
+## AI Assistance Disclaimer
+
+This project was developed with the assistance of an AI coding agent (Codegen). The AI helped with:
+
+- Initial project architecture and structure
+- Implementation of placeholder modules
+- Documentation and examples
+- Best practices for Rust development
+
+While AI provided significant assistance, all code has been reviewed and validated to ensure it meets quality standards and follows Rust best practices.
+
 ## Roadmap
 
 1. ✅ Initialize project structure
