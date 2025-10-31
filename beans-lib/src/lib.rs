@@ -7,6 +7,17 @@
 //! - Currency conversion using external exchange rates
 //! - Generating reports and analytics (income vs expenses over time)
 //!
+//! # Architecture
+//!
+//! The library is organized into several modules:
+//!
+//! - `models`: Core domain models (Currency, Tag, LedgerEntry, EntryType)
+//! - `database`: Repository pattern for SQLite persistence
+//! - `ledger`: High-level ledger management API
+//! - `currency`: Exchange rate conversion and caching
+//! - `reporting`: Time series data and report generation
+//! - `error`: Error types and handling
+//!
 //! # Examples
 //!
 //! ## Basic Usage
@@ -26,18 +37,17 @@
 //!     .currency(Currency::usd())
 //!     .entry_type(EntryType::Income)
 //!     .description("April salary")
-//!     .add_tag("salary")
+//!     .tag(Tag::new("salary")?)
 //!     .build()?;
 //!
 //! // Add to ledger
-//! let id = ledger.add_entry(entry)?;
+//! let id = ledger.add_entry(&entry)?;
 //!
 //! // Query entries
-//! let filter = EntryFilter::new()
-//!     .with_entry_type(EntryType::Income);
-//! let income_entries = ledger.list_entries(&filter)?;
+//! let filter = EntryFilter::default();
+//! let entries = ledger.list_entries(&filter)?;
 //!
-//! println!("Found {} income entries", income_entries.len());
+//! println!("Found {} entries", entries.len());
 //! # Ok(())
 //! # }
 //! ```
@@ -49,7 +59,7 @@
 //! use rust_decimal_macros::dec;
 //!
 //! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
-//! let converter = CurrencyConverter::new();
+//! let converter = CurrencyConverter::default();
 //! let amount_in_eur = converter.convert_amount(
 //!     dec!(100.00),
 //!     &Currency::usd(),
@@ -69,8 +79,8 @@
 //!
 //! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
 //! let ledger = LedgerManager::open("my_finances.bean")?;
-//! let converter = CurrencyConverter::new();
-//! let generator = ReportGenerator::with_converter(&ledger, &converter);
+//! let converter = CurrencyConverter::default();
+//! let generator = ReportGenerator::new(&ledger).with_converter(converter);
 //!
 //! let end = Utc::now();
 //! let start = end - Duration::days(30);
@@ -79,12 +89,12 @@
 //!     start,
 //!     end,
 //!     TimePeriod::Daily,
-//!     &Currency::usd(),
+//!     Some(Currency::usd()),
 //!     None
 //! ).await?;
 //!
-//! println!("Total income: {}", report.summary.total_income);
-//! println!("Total expenses: {}", report.summary.total_expenses);
+//! println!("Income: {}", report.summary.income);
+//! println!("Expenses: {}", report.summary.expenses);
 //! println!("Net: {}", report.summary.net);
 //! # Ok(())
 //! # }
