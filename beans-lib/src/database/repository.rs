@@ -27,20 +27,20 @@ pub struct EntryFilter {
 /// Repository trait for ledger entry operations.
 pub trait Repository: std::fmt::Debug {
     /// Creates a new entry in the repository.
-    fn create<'a>(&self, entry: &LedgerEntry<'a>) -> BeansResult<()>;
-    
+    fn create<'a>(&self, entry: &LedgerEntry) -> BeansResult<()>;
+
     /// Retrieves an entry by its ID.
-    fn get(&self, id: Uuid) -> BeansResult<LedgerEntry<'_>>;
-    
+    fn get(&self, id: Uuid) -> BeansResult<LedgerEntry>;
+
     /// Updates an existing entry.
-    fn update<'a>(&self, entry: &LedgerEntry<'a>) -> BeansResult<()>;
-    
+    fn update<'a>(&self, entry: &LedgerEntry) -> BeansResult<()>;
+
     /// Deletes an entry by its ID.
     fn delete(&self, id: Uuid) -> BeansResult<()>;
-    
+
     /// Lists entries matching the given filter.
-    fn list(&self, filter: &EntryFilter) -> BeansResult<Vec<LedgerEntry<'_>>>;
-    
+    fn list(&self, filter: &EntryFilter) -> BeansResult<Vec<LedgerEntry>>;
+
     /// Counts entries matching the given filter.
     fn count(&self, filter: &EntryFilter) -> BeansResult<usize>;
 }

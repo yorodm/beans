@@ -1,7 +1,6 @@
 //! Ledger entry model for representing financial transactions.
 
 use crate::error::{BeansError, BeansResult};
-use crate::models::currency::currency_serde;
 use crate::models::{Currency, Tag};
 use chrono::{DateTime, Utc};
 use rust_decimal::Decimal;
@@ -60,16 +59,15 @@ impl FromStr for EntryType {
 
 /// Represents a financial transaction in the ledger.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct LedgerEntry<'a> {
+pub struct LedgerEntry {
     /// Unique identifier for the entry.
     id: Uuid,
     /// Date and time of the transaction.
     date: DateTime<Utc>,
     /// Name/title of the transaction.
     name: String,
-    /// Currency of the transaction.
-    #[serde(with = "currency_serde")]
-    currency: Currency<'a>,
+    /// Currency of the transaction (ISO Code).
+    currency: String,
     /// Amount of the transaction.
     amount: Decimal,
     /// Optional description of the transaction.
@@ -86,7 +84,7 @@ pub struct LedgerEntry<'a> {
 
 // We're using the currency_serde module from the currency module
 
-impl<'a> LedgerEntry<'a> {
+impl LedgerEntry {
     /// Returns the entry's unique identifier.
     pub fn id(&self) -> Uuid {
         self.id
@@ -103,8 +101,8 @@ impl<'a> LedgerEntry<'a> {
     }
 
     /// Returns the currency of the transaction.
-    pub fn currency(&self) -> &Currency<'a> {
-        &self.currency
+    pub fn currency(&self) -> String {
+        self.currency.clone()
     }
 
     /// Returns the amount of the transaction.
@@ -170,6 +168,11 @@ impl<'a> LedgerEntry<'a> {
         tags.into_iter().any(|tag| self.has_tag(tag.as_ref()))
     }
 
+    pub fn money<'a>(&self) -> BeansResult<Currency<'a>> {
+        // Generates a Currency given the value of code and amount on this entry
+        let c = Currency::new(self.amount, &self.currency);
+        return c
+    }
     /// Returns a summary string of this entry.
     ///
     /// Format: "[date] [name] ([currency] [amount]) [tags]"
@@ -200,7 +203,7 @@ impl<'a> LedgerEntry<'a> {
     }
 }
 
-impl<'a> fmt::Display for LedgerEntry<'a> {
+impl fmt::Display for LedgerEntry {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.summary())
     }
@@ -208,11 +211,11 @@ impl<'a> fmt::Display for LedgerEntry<'a> {
 
 /// Builder for creating ledger entries.
 #[derive(Debug, Default)]
-pub struct LedgerEntryBuilder<'a> {
+pub struct LedgerEntryBuilder {
     id: Option<Uuid>,
     date: Option<DateTime<Utc>>,
     name: Option<String>,
-    currency: Option<Currency<'a>>,
+    currency: Option<String>,
     amount: Option<Decimal>,
     description: Option<String>,
     tags: HashSet<Tag>,
@@ -221,7 +224,7 @@ pub struct LedgerEntryBuilder<'a> {
     updated_at: Option<DateTime<Utc>>,
 }
 
-impl<'a> LedgerEntryBuilder<'a> {
+impl LedgerEntryBuilder {
     /// Creates a new builder.
     pub fn new() -> Self {
         Self::default()
@@ -254,7 +257,7 @@ impl<'a> LedgerEntryBuilder<'a> {
     /// Sets the currency of the transaction.
     ///
     /// This field is required.
-    pub fn currency(mut self, currency: Currency<'a>) -> Self {
+    pub fn currency(mut self, currency: String) -> Self {
         self.currency = Some(currency);
         self
     }
@@ -315,7 +318,7 @@ impl<'a> LedgerEntryBuilder<'a> {
     /// Builds the ledger entry.
     ///
     /// Returns an error if any required field is missing or invalid.
-    pub fn build(self) -> BeansResult<LedgerEntry<'a>> {
+    pub fn build(self) -> BeansResult<LedgerEntry> {
         let now = Utc::now();
 
         let name = self
@@ -360,10 +363,7 @@ impl<'a> LedgerEntryBuilder<'a> {
     /// Creates a builder pre-populated with values from an existing entry.
     ///
     /// This is useful for creating a modified copy of an existing entry.
-    pub fn from_entry<'b>(entry: &LedgerEntry<'b>) -> Self
-    where
-        'b: 'a,
-    {
+    pub fn from_entry(entry: &LedgerEntry) -> Self {
         Self {
             id: Some(entry.id),
             date: Some(entry.date),
