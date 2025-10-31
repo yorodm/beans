@@ -29,4 +29,3 @@ once_cell = { workspace = true }
 env_logger = { workspace = true }
 tempfile = "3.8"
 wiremock = "0.6"
-rust_decimal_macros = "1.33"

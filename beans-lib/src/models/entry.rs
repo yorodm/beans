@@ -360,7 +360,7 @@ impl LedgerEntryBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rust_decimal_macros::dec;
+    use rust_decimal::prelude::dec;
 
     #[test]
     fn test_entry_type_from_str() {
