@@ -50,8 +50,7 @@ pub fn initialize_schema(conn: &Connection) -> BeansResult<()> {
 }
 
 /// Returns the current schema version.
-pub fn get_schema_version(conn: &Connection) -> BeansResult<i64> {
+pub fn get_schema_version(_conn: &Connection) -> BeansResult<i64> {
     // Placeholder implementation - will be expanded in final version
     Ok(1)
 }
-

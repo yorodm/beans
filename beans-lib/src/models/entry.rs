@@ -167,25 +167,25 @@ impl LedgerEntryBuilder {
         let now = Utc::now();
         
         let name = self.name.ok_or_else(|| {
-            BeansError::ValidationError("Entry name is required".to_string())
+            BeansError::validation("Entry name is required")
         })?;
         
         if name.trim().is_empty() {
-            return Err(BeansError::ValidationError(
-                "Entry name cannot be empty".to_string(),
+            return Err(BeansError::validation(
+                "Entry name cannot be empty"
             ));
         }
         
         let currency = self.currency.ok_or_else(|| {
-            BeansError::ValidationError("Entry currency is required".to_string())
+            BeansError::validation("Entry currency is required")
         })?;
         
         let amount = self.amount.ok_or_else(|| {
-            BeansError::ValidationError("Entry amount is required".to_string())
+            BeansError::validation("Entry amount is required")
         })?;
         
         let entry_type = self.entry_type.ok_or_else(|| {
-            BeansError::ValidationError("Entry type is required".to_string())
+            BeansError::validation("Entry type is required")
         })?;
         
         Ok(LedgerEntry {
@@ -224,4 +224,3 @@ mod tests {
         assert_eq!(entry.entry_type(), EntryType::Expense);
     }
 }
-

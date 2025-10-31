@@ -1,15 +1,13 @@
 //! Report generation for ledger data.
 
 use crate::currency::CurrencyConverter;
-use crate::database::EntryFilter;
 use crate::error::{BeansError, BeansResult};
 use crate::ledger::LedgerManager;
-use crate::models::{Currency, EntryType};
+use crate::models::Currency;
 use crate::reporting::types::{
-    IncomeExpenseReport, PeriodSummary, TimeSeriesData, TimeSeriesPoint, TimePeriod,
+    IncomeExpenseReport, PeriodSummary, TimePeriod,
 };
 use chrono::{DateTime, Utc};
-use rust_decimal::Decimal;
 
 /// Generates reports from ledger data.
 #[derive(Debug, Clone)]
@@ -59,4 +57,3 @@ impl<'a> ReportGenerator<'a> {
         Err(BeansError::NotImplemented("ReportGenerator::period_summary".to_string()))
     }
 }
-

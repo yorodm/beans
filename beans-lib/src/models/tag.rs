@@ -19,8 +19,8 @@ impl Tag {
         
         // Placeholder validation - will be more robust in final implementation
         if name.is_empty() {
-            return Err(BeansError::ValidationError(
-                "Tag name cannot be empty".to_string(),
+            return Err(BeansError::validation(
+                "Tag name cannot be empty"
             ));
         }
         
@@ -55,4 +55,3 @@ mod tests {
         assert_eq!(tag.name(), "groceries");
     }
 }
-

@@ -18,8 +18,8 @@ impl Currency {
         let code = code.as_ref().to_uppercase();
         // Placeholder validation - will be more robust in final implementation
         if code.len() != 3 {
-            return Err(BeansError::ValidationError(
-                "Currency code must be 3 letters".to_string(),
+            return Err(BeansError::validation(
+                "Currency code must be 3 letters"
             ));
         }
         
@@ -64,4 +64,3 @@ mod tests {
         assert_eq!(currency.code(), "USD");
     }
 }
-

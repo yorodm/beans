@@ -25,7 +25,7 @@ pub struct EntryFilter {
 }
 
 /// Repository trait for ledger entry operations.
-pub trait Repository {
+pub trait Repository: std::fmt::Debug {
     /// Creates a new entry in the repository.
     fn create(&self, entry: &LedgerEntry) -> BeansResult<()>;
     
@@ -44,4 +44,3 @@ pub trait Repository {
     /// Counts entries matching the given filter.
     fn count(&self, filter: &EntryFilter) -> BeansResult<usize>;
 }
-

@@ -58,6 +58,14 @@ pub enum BeansError {
     /// Generic error for other cases.
     #[error("Operation failed: {0}")]
     Other(String),
+    
+    /// Feature not yet implemented (placeholder).
+    #[error("Not implemented: {0}")]
+    NotImplemented(String),
+    
+    /// Error converting between types.
+    #[error("Conversion error: {0}")]
+    ConversionError(String),
 }
 
 impl BeansError {
@@ -76,4 +84,3 @@ impl BeansError {
         Self::Other(msg.into())
     }
 }
-
