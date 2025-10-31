@@ -92,13 +92,11 @@
 
 // Public modules
 pub mod error;
-
-// TODO: Implement these modules in separate commits
-// pub mod currency;
-// pub mod database;
-// pub mod ledger;
-// pub mod models;
-// pub mod reporting;
+pub mod currency;
+pub mod database;
+pub mod ledger;
+pub mod models;
+pub mod reporting;
 
 // Prelude for convenient imports
 pub mod prelude {
@@ -112,16 +110,14 @@ pub mod prelude {
 
     // Re-export core types
     pub use crate::error::{BeansError, BeansResult};
-    
-    // TODO: Re-export these once modules are implemented
-    // pub use crate::currency::{CurrencyConverter, ExchangeRateCache};
-    // pub use crate::database::{EntryFilter, LedgerRepository, Repository};
-    // pub use crate::ledger::LedgerManager;
-    // pub use crate::models::{Currency, EntryType, LedgerEntry, LedgerEntryBuilder, Tag};
-    // pub use crate::reporting::{
-    //     IncomeExpenseReport, PeriodSummary, ReportGenerator, TimePeriod, TimeSeriesData,
-    //     TimeSeriesPoint,
-    // };
+    pub use crate::currency::{CurrencyConverter, ExchangeRateCache};
+    pub use crate::database::{EntryFilter, Repository};
+    pub use crate::ledger::LedgerManager;
+    pub use crate::models::{Currency, EntryType, LedgerEntry, LedgerEntryBuilder, Tag};
+    pub use crate::reporting::{
+        IncomeExpenseReport, PeriodSummary, ReportGenerator, TimePeriod, TimeSeriesData,
+        TimeSeriesPoint,
+    };
 
     // Re-export commonly used external types
     pub use chrono::{DateTime, Utc};
@@ -131,6 +127,5 @@ pub mod prelude {
 
 // Re-export commonly used types at the crate root
 pub use error::{BeansError, BeansResult};
-// TODO: Re-export these once modules are implemented
-// pub use ledger::LedgerManager;
-// pub use models::{Currency, EntryType, LedgerEntry, LedgerEntryBuilder, Tag};
+pub use ledger::LedgerManager;
+pub use models::{Currency, EntryType, LedgerEntry, LedgerEntryBuilder, Tag};
