@@ -1,0 +1,2 @@
+# beans
+Count your beans
