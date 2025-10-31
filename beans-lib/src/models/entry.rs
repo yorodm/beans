@@ -1,8 +1,8 @@
 //! Ledger entry model for representing financial transactions.
 
 use crate::error::{BeansError, BeansResult};
-use crate::models::{Currency, Tag};
 use crate::models::currency::currency_serde;
+use crate::models::{Currency, Tag};
 use chrono::{DateTime, Utc};
 use rust_decimal::Decimal;
 
@@ -11,9 +11,6 @@ use std::collections::HashSet;
 use std::fmt;
 use std::str::FromStr;
 use uuid::Uuid;
-
-// Re-export helper functions from currency module
-pub use crate::models::currency::{usd, usd_with_amount, eur, gbp, jpy, cny, cad, aud, chf};
 
 /// Type of ledger entry.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -33,7 +30,7 @@ impl EntryType {
             EntryType::Expense => "expense",
         }
     }
-    
+
     /// Returns all possible entry types.
     pub fn all() -> [EntryType; 2] {
         [EntryType::Income, EntryType::Expense]
@@ -53,9 +50,10 @@ impl FromStr for EntryType {
         match s.trim().to_lowercase().as_str() {
             "income" => Ok(EntryType::Income),
             "expense" => Ok(EntryType::Expense),
-            _ => Err(BeansError::validation(
-                format!("Invalid entry type: '{}'. Expected 'income' or 'expense'", s)
-            )),
+            _ => Err(BeansError::validation(format!(
+                "Invalid entry type: '{}'. Expected 'income' or 'expense'",
+                s
+            ))),
         }
     }
 }
@@ -138,7 +136,7 @@ impl<'a> LedgerEntry<'a> {
     pub fn updated_at(&self) -> DateTime<Utc> {
         self.updated_at
     }
-    
+
     /// Creates an updated copy of this entry with the given update time.
     ///
     /// This is primarily used when updating entries in the database.
@@ -147,31 +145,31 @@ impl<'a> LedgerEntry<'a> {
         entry.updated_at = updated_at;
         entry
     }
-    
+
     /// Returns true if this entry has the specified tag.
     pub fn has_tag(&self, tag_name: &str) -> bool {
         let normalized = tag_name.trim().to_lowercase();
         self.tags.iter().any(|tag| tag.name() == normalized)
     }
-    
+
     /// Returns true if this entry has all the specified tags.
-    pub fn has_all_tags<I, S>(&self, tags: I) -> bool 
+    pub fn has_all_tags<I, S>(&self, tags: I) -> bool
     where
         I: IntoIterator<Item = S>,
         S: AsRef<str>,
     {
         tags.into_iter().all(|tag| self.has_tag(tag.as_ref()))
     }
-    
+
     /// Returns true if this entry has any of the specified tags.
-    pub fn has_any_tag<I, S>(&self, tags: I) -> bool 
+    pub fn has_any_tag<I, S>(&self, tags: I) -> bool
     where
         I: IntoIterator<Item = S>,
         S: AsRef<str>,
     {
         tags.into_iter().any(|tag| self.has_tag(tag.as_ref()))
     }
-    
+
     /// Returns a summary string of this entry.
     ///
     /// Format: "[date] [name] ([currency] [amount]) [tags]"
@@ -181,13 +179,16 @@ impl<'a> LedgerEntry<'a> {
         } else {
             let mut tags: Vec<_> = self.tags.iter().collect();
             tags.sort_by(|a, b| a.name().cmp(b.name()));
-            
-            format!(" [{}]", tags.iter()
-                .map(|tag| tag.name())
-                .collect::<Vec<_>>()
-                .join(", "))
+
+            format!(
+                " [{}]",
+                tags.iter()
+                    .map(|tag| tag.name())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            )
         };
-        
+
         format!(
             "{} {} ({} {}){}",
             self.date.format("%Y-%m-%d"),
@@ -279,7 +280,7 @@ impl<'a> LedgerEntryBuilder<'a> {
         self.tags.insert(tag);
         self
     }
-    
+
     /// Adds multiple tags to the transaction.
     pub fn tags<I>(mut self, tags: I) -> Self
     where
@@ -305,34 +306,30 @@ impl<'a> LedgerEntryBuilder<'a> {
     pub fn build(self) -> BeansResult<LedgerEntry<'a>> {
         let now = Utc::now();
 
-        let name = self.name.ok_or_else(|| {
-            BeansError::validation("Entry name is required")
-        })?;
-        
+        let name = self
+            .name
+            .ok_or_else(|| BeansError::validation("Entry name is required"))?;
+
         if name.trim().is_empty() {
-            return Err(BeansError::validation(
-                "Entry name cannot be empty"
-            ));
+            return Err(BeansError::validation("Entry name cannot be empty"));
         }
-        
-        let currency = self.currency.ok_or_else(|| {
-            BeansError::validation("Entry currency is required")
-        })?;
-        
-        let amount = self.amount.ok_or_else(|| {
-            BeansError::validation("Entry amount is required")
-        })?;
-        
+
+        let currency = self
+            .currency
+            .ok_or_else(|| BeansError::validation("Entry currency is required"))?;
+
+        let amount = self
+            .amount
+            .ok_or_else(|| BeansError::validation("Entry amount is required"))?;
+
         // Validate amount is positive
         if amount <= Decimal::ZERO {
-            return Err(BeansError::validation(
-                "Entry amount must be positive"
-            ));
+            return Err(BeansError::validation("Entry amount must be positive"));
         }
-        
-        let entry_type = self.entry_type.ok_or_else(|| {
-            BeansError::validation("Entry type is required")
-        })?;
+
+        let entry_type = self
+            .entry_type
+            .ok_or_else(|| BeansError::validation("Entry type is required"))?;
 
         Ok(LedgerEntry {
             id: self.id.unwrap_or_else(Uuid::new_v4),
@@ -347,11 +344,11 @@ impl<'a> LedgerEntryBuilder<'a> {
             updated_at: now,
         })
     }
-    
+
     /// Creates a builder pre-populated with values from an existing entry.
     ///
     /// This is useful for creating a modified copy of an existing entry.
-    pub fn from_entry<'b>(entry: &LedgerEntry<'b>) -> Self 
+    pub fn from_entry<'b>(entry: &LedgerEntry<'b>) -> Self
     where
         'b: 'a,
     {
