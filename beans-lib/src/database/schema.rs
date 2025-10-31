@@ -2,6 +2,7 @@
 
 use crate::error::{BeansError, BeansResult};
 use rusqlite::Connection;
+use sql_query_builder as sql;
 use std::collections::HashMap;
 
 /// Current schema version.
@@ -45,44 +46,82 @@ pub fn initialize_schema(conn: &Connection) -> BeansResult<()> {
 
 /// Creates the initial schema (version 1).
 fn create_initial_schema(conn: &Connection) -> BeansResult<()> {
-    conn.execute_batch(
-        "
-        -- Create entries table
-        CREATE TABLE IF NOT EXISTS entries (
-            id TEXT PRIMARY KEY,
-            date TEXT NOT NULL,
-            name TEXT NOT NULL,
-            currency TEXT NOT NULL,
-            amount TEXT NOT NULL,
-            description TEXT,
-            entry_type TEXT NOT NULL,
-            created_at TEXT NOT NULL,
-            updated_at TEXT NOT NULL
-        );
+    // Create entries table
+    let create_entries_table = sql::CreateTable::new()
+        .create_table_if_not_exists("entries")
+        .column("id TEXT PRIMARY KEY")
+        .column("date TEXT NOT NULL")
+        .column("name TEXT NOT NULL")
+        .column("currency TEXT NOT NULL")
+        .column("amount TEXT NOT NULL")
+        .column("description TEXT")
+        .column("entry_type TEXT NOT NULL")
+        .column("created_at TEXT NOT NULL")
+        .column("updated_at TEXT NOT NULL")
+        .as_string();
 
-        -- Create tags table
-        CREATE TABLE IF NOT EXISTS tags (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL UNIQUE
-        );
+    conn.execute(&create_entries_table, [])
+        .map_err(|e| BeansError::database(format!("Failed to create entries table: {}", e)))?;
 
-        -- Create entry_tags junction table
-        CREATE TABLE IF NOT EXISTS entry_tags (
-            entry_id TEXT NOT NULL,
-            tag_id INTEGER NOT NULL,
-            PRIMARY KEY (entry_id, tag_id),
-            FOREIGN KEY (entry_id) REFERENCES entries (id) ON DELETE CASCADE,
-            FOREIGN KEY (tag_id) REFERENCES tags (id) ON DELETE CASCADE
-        );
+    // Create tags table
+    let create_tags_table = sql::CreateTable::new()
+        .create_table_if_not_exists("tags")
+        .column("id INTEGER PRIMARY KEY AUTOINCREMENT")
+        .column("name TEXT NOT NULL UNIQUE")
+        .as_string();
 
-        -- Create indexes
-        CREATE INDEX IF NOT EXISTS idx_entries_date ON entries (date);
-        CREATE INDEX IF NOT EXISTS idx_entries_entry_type ON entries (entry_type);
-        CREATE INDEX IF NOT EXISTS idx_entries_currency ON entries (currency);
-        CREATE INDEX IF NOT EXISTS idx_tags_name ON tags (name);
-        ",
-    )
-    .map_err(|e| BeansError::database(format!("Failed to create initial schema: {}", e)))?;
+    conn.execute(&create_tags_table, [])
+        .map_err(|e| BeansError::database(format!("Failed to create tags table: {}", e)))?;
+
+    // Create entry_tags junction table
+    let create_entry_tags_table = sql::CreateTable::new()
+        .create_table_if_not_exists("entry_tags")
+        .column("entry_id TEXT NOT NULL")
+        .column("tag_id INTEGER NOT NULL")
+        .column("PRIMARY KEY (entry_id, tag_id)")
+        .column("FOREIGN KEY (entry_id) REFERENCES entries (id) ON DELETE CASCADE")
+        .column("FOREIGN KEY (tag_id) REFERENCES tags (id) ON DELETE CASCADE")
+        .as_string();
+
+    conn.execute(&create_entry_tags_table, [])
+        .map_err(|e| BeansError::database(format!("Failed to create entry_tags table: {}", e)))?;
+
+    // Create indexes
+    let create_idx_entries_date = sql::CreateIndex::new()
+        .create_index_if_not_exists("idx_entries_date")
+        .on("entries")
+        .column("date")
+        .as_string();
+
+    conn.execute(&create_idx_entries_date, [])
+        .map_err(|e| BeansError::database(format!("Failed to create idx_entries_date: {}", e)))?;
+
+    let create_idx_entries_entry_type = sql::CreateIndex::new()
+        .create_index_if_not_exists("idx_entries_entry_type")
+        .on("entries")
+        .column("entry_type")
+        .as_string();
+
+    conn.execute(&create_idx_entries_entry_type, [])
+        .map_err(|e| BeansError::database(format!("Failed to create idx_entries_entry_type: {}", e)))?;
+
+    let create_idx_entries_currency = sql::CreateIndex::new()
+        .create_index_if_not_exists("idx_entries_currency")
+        .on("entries")
+        .column("currency")
+        .as_string();
+
+    conn.execute(&create_idx_entries_currency, [])
+        .map_err(|e| BeansError::database(format!("Failed to create idx_entries_currency: {}", e)))?;
+
+    let create_idx_tags_name = sql::CreateIndex::new()
+        .create_index_if_not_exists("idx_tags_name")
+        .on("tags")
+        .column("name")
+        .as_string();
+
+    conn.execute(&create_idx_tags_name, [])
+        .map_err(|e| BeansError::database(format!("Failed to create idx_tags_name: {}", e)))?;
 
     Ok(())
 }
@@ -107,12 +146,15 @@ fn run_migrations(conn: &Connection, from_version: i64, to_version: i64) -> Bean
 /// Returns 0 if the schema_version table doesn't exist or is empty.
 pub fn get_schema_version(conn: &Connection) -> BeansResult<i64> {
     // Check if the schema_version table exists
+    let check_table_query = sql::Select::new()
+        .select("1")
+        .from("sqlite_master")
+        .where_clause("type='table'")
+        .where_clause("name='schema_version'")
+        .as_string();
+
     let table_exists: bool = conn
-        .query_row(
-            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='schema_version'",
-            [],
-            |_| Ok(true),
-        )
+        .query_row(&check_table_query, [], |_| Ok(true))
         .unwrap_or(false);
 
     if !table_exists {
@@ -120,11 +162,14 @@ pub fn get_schema_version(conn: &Connection) -> BeansResult<i64> {
     }
 
     // Get the version
-    let version: Result<i64, rusqlite::Error> = conn.query_row(
-        "SELECT version FROM schema_version WHERE id = 1",
-        [],
-        |row| row.get(0),
-    );
+    let get_version_query = sql::Select::new()
+        .select("version")
+        .from("schema_version")
+        .where_clause("id = 1")
+        .as_string();
+
+    let version: Result<i64, rusqlite::Error> =
+        conn.query_row(&get_version_query, [], |row| row.get(0));
 
     match version {
         Ok(v) => Ok(v),
@@ -140,11 +185,16 @@ pub fn get_schema_version(conn: &Connection) -> BeansResult<i64> {
 fn set_schema_version(conn: &Connection, version: i64) -> BeansResult<()> {
     let now = chrono::Utc::now().to_rfc3339();
 
-    conn.execute(
-        "INSERT OR REPLACE INTO schema_version (id, version, updated_at) VALUES (1, ?, ?)",
-        (version, now),
-    )
-    .map_err(|e| BeansError::database(format!("Failed to set schema version: {}", e)))?;
+    // Note: INSERT OR REPLACE is SQLite-specific syntax
+    // sql_query_builder doesn't have a direct method for this, so we use raw SQL for this specific case
+    let insert_query = sql::Insert::new()
+        .insert_into("schema_version")
+        .raw("INSERT OR REPLACE INTO schema_version (id, version, updated_at)")
+        .values("(1, ?, ?)")
+        .as_string();
+
+    conn.execute(&insert_query, rusqlite::params![version, now])
+        .map_err(|e| BeansError::database(format!("Failed to set schema version: {}", e)))?;
 
     Ok(())
 }
@@ -166,12 +216,15 @@ pub fn validate_schema(conn: &Connection) -> BeansResult<bool> {
 
     // Check tables
     for table in &required_tables {
+        let check_table_query = sql::Select::new()
+            .select("1")
+            .from("sqlite_master")
+            .where_clause("type='table'")
+            .where_clause("name=?")
+            .as_string();
+
         let exists: bool = conn
-            .query_row(
-                "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?",
-                [table],
-                |_| Ok(true),
-            )
+            .query_row(&check_table_query, [table], |_| Ok(true))
             .unwrap_or(false);
 
         if !exists {
@@ -181,12 +234,15 @@ pub fn validate_schema(conn: &Connection) -> BeansResult<bool> {
 
     // Check indexes
     for index in &required_indexes {
+        let check_index_query = sql::Select::new()
+            .select("1")
+            .from("sqlite_master")
+            .where_clause("type='index'")
+            .where_clause("name=?")
+            .as_string();
+
         let exists: bool = conn
-            .query_row(
-                "SELECT 1 FROM sqlite_master WHERE type='index' AND name=?",
-                [index],
-                |_| Ok(true),
-            )
+            .query_row(&check_index_query, [index], |_| Ok(true))
             .unwrap_or(false);
 
         if !exists {

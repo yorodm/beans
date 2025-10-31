@@ -1,5 +1,6 @@
 //! Database module for SQLite persistence.
 
+mod query_helpers;
 mod repository;
 mod schema;
 mod sqlite_repository;
