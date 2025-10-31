@@ -2,101 +2,18 @@
 
 use crate::error::{BeansError, BeansResult};
 use crate::models::{Currency, Tag};
+use crate::models::currency::currency_serde;
 use chrono::{DateTime, Utc};
-use currency_rs::CurrencyOpts;
 use rust_decimal::Decimal;
 
-use serde::{Deserialize, Serialize, Serializer, Deserializer};
-use serde::de::{self, Visitor};
-use std::marker::PhantomData;
+use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::fmt;
 use std::str::FromStr;
 use uuid::Uuid;
 
-// Newtype wrapper for Currency to allow serialization/deserialization
-#[derive(Debug, Clone)]
-pub struct SerializableCurrency(Currency);
-
-impl From<Currency> for SerializableCurrency {
-    fn from(currency: Currency) -> Self {
-        SerializableCurrency(currency)
-    }
-}
-
-impl From<SerializableCurrency> for Currency {
-    fn from(sc: SerializableCurrency) -> Self {
-        sc.0
-    }
-}
-
-impl Serialize for SerializableCurrency {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_str(&self.0.to_string())
-    }
-}
-
-impl<'de> Deserialize<'de> for SerializableCurrency {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        struct CurrencyVisitor(PhantomData<fn() -> SerializableCurrency>);
-
-        impl<'de> Visitor<'de> for CurrencyVisitor {
-            type Value = SerializableCurrency;
-
-            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-                formatter.write_str("a string representing a currency code")
-            }
-
-            fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
-            where
-                E: de::Error,
-            {
-                Ok(SerializableCurrency(Currency::new_float(0.0, Some(CurrencyOpts::new().set_symbol(value)))))
-            }
-        }
-
-        deserializer.deserialize_str(CurrencyVisitor(PhantomData))
-    }
-}
-
-// Helper functions for creating common currencies
-pub fn usd() -> Currency {
-    Currency::new_float(0.0, Some(CurrencyOpts::new().set_symbol("USD")))
-}
-
-pub fn eur() -> Currency {
-    Currency::new_float(0.0, Some(CurrencyOpts::new().set_symbol("EUR")))
-}
-
-pub fn gbp() -> Currency {
-    Currency::new_float(0.0, Some(CurrencyOpts::new().set_symbol("GBP")))
-}
-
-pub fn jpy() -> Currency {
-    Currency::new_float(0.0, Some(CurrencyOpts::new().set_symbol("JPY")))
-}
-
-pub fn cny() -> Currency {
-    Currency::new_float(0.0, Some(CurrencyOpts::new().set_symbol("CNY")))
-}
-
-pub fn cad() -> Currency {
-    Currency::new_float(0.0, Some(CurrencyOpts::new().set_symbol("CAD")))
-}
-
-pub fn aud() -> Currency {
-    Currency::new_float(0.0, Some(CurrencyOpts::new().set_symbol("AUD")))
-}
-
-pub fn chf() -> Currency {
-    Currency::new_float(0.0, Some(CurrencyOpts::new().set_symbol("CHF")))
-}
+// Re-export helper functions from currency module
+pub use crate::models::currency::{usd, usd_with_amount, eur, gbp, jpy, cny, cad, aud, chf};
 
 /// Type of ledger entry.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -145,7 +62,7 @@ impl FromStr for EntryType {
 
 /// Represents a financial transaction in the ledger.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct LedgerEntry {
+pub struct LedgerEntry<'a> {
     /// Unique identifier for the entry.
     id: Uuid,
     /// Date and time of the transaction.
@@ -154,7 +71,7 @@ pub struct LedgerEntry {
     name: String,
     /// Currency of the transaction.
     #[serde(with = "currency_serde")]
-    currency: Currency,
+    currency: Currency<'a>,
     /// Amount of the transaction.
     amount: Decimal,
     /// Optional description of the transaction.
@@ -169,29 +86,9 @@ pub struct LedgerEntry {
     updated_at: DateTime<Utc>,
 }
 
-// Module for serializing/deserializing Currency
-mod currency_serde {
-    use super::*;
-    use serde::{Deserializer, Serializer};
+// We're using the currency_serde module from the currency module
 
-    pub fn serialize<S>(currency: &Currency, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let sc = SerializableCurrency::from(currency.clone());
-        sc.serialize(serializer)
-    }
-
-    pub fn deserialize<'de, D>(deserializer: D) -> Result<Currency, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let sc = SerializableCurrency::deserialize(deserializer)?;
-        Ok(Currency::from(sc))
-    }
-}
-
-impl LedgerEntry {
+impl<'a> LedgerEntry<'a> {
     /// Returns the entry's unique identifier.
     pub fn id(&self) -> Uuid {
         self.id
@@ -208,7 +105,7 @@ impl LedgerEntry {
     }
 
     /// Returns the currency of the transaction.
-    pub fn currency(&self) -> &Currency {
+    pub fn currency(&self) -> &Currency<'a> {
         &self.currency
     }
 
@@ -295,14 +192,14 @@ impl LedgerEntry {
             "{} {} ({} {}){}",
             self.date.format("%Y-%m-%d"),
             self.name,
-            self.currency.to_string(),
+            self.currency,
             self.amount,
             tags_str
         )
     }
 }
 
-impl fmt::Display for LedgerEntry {
+impl<'a> fmt::Display for LedgerEntry<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.summary())
     }
@@ -310,18 +207,18 @@ impl fmt::Display for LedgerEntry {
 
 /// Builder for creating ledger entries.
 #[derive(Debug, Default)]
-pub struct LedgerEntryBuilder {
+pub struct LedgerEntryBuilder<'a> {
     id: Option<Uuid>,
     date: Option<DateTime<Utc>>,
     name: Option<String>,
-    currency: Option<Currency>,
+    currency: Option<Currency<'a>>,
     amount: Option<Decimal>,
     description: Option<String>,
     tags: HashSet<Tag>,
     entry_type: Option<EntryType>,
 }
 
-impl LedgerEntryBuilder {
+impl<'a> LedgerEntryBuilder<'a> {
     /// Creates a new builder.
     pub fn new() -> Self {
         Self::default()
@@ -354,7 +251,7 @@ impl LedgerEntryBuilder {
     /// Sets the currency of the transaction.
     ///
     /// This field is required.
-    pub fn currency(mut self, currency: Currency) -> Self {
+    pub fn currency(mut self, currency: Currency<'a>) -> Self {
         self.currency = Some(currency);
         self
     }
@@ -405,7 +302,7 @@ impl LedgerEntryBuilder {
     /// Builds the ledger entry.
     ///
     /// Returns an error if any required field is missing or invalid.
-    pub fn build(self) -> BeansResult<LedgerEntry> {
+    pub fn build(self) -> BeansResult<LedgerEntry<'a>> {
         let now = Utc::now();
 
         let name = self.name.ok_or_else(|| {
@@ -454,7 +351,10 @@ impl LedgerEntryBuilder {
     /// Creates a builder pre-populated with values from an existing entry.
     ///
     /// This is useful for creating a modified copy of an existing entry.
-    pub fn from_entry(entry: &LedgerEntry) -> Self {
+    pub fn from_entry<'b>(entry: &LedgerEntry<'b>) -> Self 
+    where
+        'b: 'a,
+    {
         Self {
             id: Some(entry.id),
             date: Some(entry.date),

@@ -29,19 +29,19 @@ impl LedgerManager {
     }
 
     /// Adds a new entry to the ledger.
-    pub fn add_entry(&self, _entry: &LedgerEntry) -> BeansResult<Uuid> {
+    pub fn add_entry<'a>(&self, _entry: &LedgerEntry<'a>) -> BeansResult<Uuid> {
         // Placeholder implementation - will be expanded in final version
         Err(BeansError::NotImplemented("LedgerManager::add_entry".to_string()))
     }
 
     /// Retrieves an entry by its ID.
-    pub fn get_entry(&self, _id: Uuid) -> BeansResult<LedgerEntry> {
+    pub fn get_entry(&self, _id: Uuid) -> BeansResult<LedgerEntry<'_>> {
         // Placeholder implementation - will be expanded in final version
         Err(BeansError::NotImplemented("LedgerManager::get_entry".to_string()))
     }
 
     /// Updates an existing entry.
-    pub fn update_entry(&self, _entry: &LedgerEntry) -> BeansResult<()> {
+    pub fn update_entry<'a>(&self, _entry: &LedgerEntry<'a>) -> BeansResult<()> {
         // Placeholder implementation - will be expanded in final version
         Err(BeansError::NotImplemented("LedgerManager::update_entry".to_string()))
     }
@@ -53,7 +53,7 @@ impl LedgerManager {
     }
 
     /// Lists entries matching the given filter.
-    pub fn list_entries(&self, _filter: &EntryFilter) -> BeansResult<Vec<LedgerEntry>> {
+    pub fn list_entries(&self, _filter: &EntryFilter) -> BeansResult<Vec<LedgerEntry<'_>>> {
         // Placeholder implementation - will be expanded in final version
         Err(BeansError::NotImplemented("LedgerManager::list_entries".to_string()))
     }
@@ -65,9 +65,8 @@ impl LedgerManager {
     }
 
     /// Gets all entries in the ledger.
-    pub fn get_all_entries(&self) -> BeansResult<Vec<LedgerEntry>> {
+    pub fn get_all_entries(&self) -> BeansResult<Vec<LedgerEntry<'_>>> {
         // Placeholder implementation - will be expanded in final version
         Err(BeansError::NotImplemented("LedgerManager::get_all_entries".to_string()))
     }
 }
-

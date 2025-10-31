@@ -38,7 +38,7 @@ impl<'a> ReportGenerator<'a> {
         _start_date: DateTime<Utc>,
         _end_date: DateTime<Utc>,
         _period: TimePeriod,
-        _target_currency: Option<Currency>,
+        _target_currency: Option<Currency<'_>>,
         _tags: Option<Vec<String>>,
     ) -> BeansResult<IncomeExpenseReport> {
         // Placeholder implementation - will be expanded in final version
@@ -50,7 +50,7 @@ impl<'a> ReportGenerator<'a> {
         &self,
         _start_date: DateTime<Utc>,
         _end_date: DateTime<Utc>,
-        _target_currency: Option<Currency>,
+        _target_currency: Option<Currency<'_>>,
         _tags: Option<Vec<String>>,
     ) -> BeansResult<PeriodSummary> {
         // Placeholder implementation - will be expanded in final version

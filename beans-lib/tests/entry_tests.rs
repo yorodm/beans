@@ -1,5 +1,5 @@
 use beans_lib::models::{EntryType, LedgerEntryBuilder, Tag};
-use beans_lib::models::entry::usd;
+use beans_lib::models::currency::{usd, usd_with_amount};
 use chrono::{DateTime, Utc};
 use rust_decimal::prelude::dec;
 use std::str::FromStr;
@@ -36,15 +36,15 @@ fn test_entry_type_all() {
 fn test_entry_builder_basic() {
     let entry = LedgerEntryBuilder::new()
         .name("Groceries")
-        .currency(usd())
+        .currency(usd_with_amount(dec!(42.50)))
         .amount(dec!(42.50))
         .entry_type(EntryType::Expense)
         .build()
         .unwrap();
 
     assert_eq!(entry.name(), "Groceries");
-    // Currency from currency_rs returns the amount as a string
-    assert!(entry.currency().to_string().contains("0.00"));
+    // Currency from rusty-money returns the amount as a string
+    assert!(entry.currency().to_string().contains("$42.50"));
     assert_eq!(entry.amount(), dec!(42.50));
     assert_eq!(entry.entry_type(), EntryType::Expense);
     assert!(entry.description().is_none());
@@ -63,7 +63,7 @@ fn test_entry_builder_full() {
         .id(id)
         .date(date)
         .name("Weekly Groceries")
-        .currency(usd())
+        .currency(usd_with_amount(dec!(125.40)))
         .amount(dec!(125.40))
         .description("Weekly grocery shopping")
         .tag(tag1.clone())
@@ -75,8 +75,8 @@ fn test_entry_builder_full() {
     assert_eq!(entry.id(), id);
     assert_eq!(entry.date(), date);
     assert_eq!(entry.name(), "Weekly Groceries");
-    // Currency from currency_rs returns the amount as a string
-    assert!(entry.currency().to_string().contains("0.00"));
+    // Currency from rusty-money returns the amount as a string
+    assert!(entry.currency().to_string().contains("$125.40"));
     assert_eq!(entry.amount(), dec!(125.40));
     assert_eq!(entry.description(), Some("Weekly grocery shopping"));
     assert_eq!(entry.tags().len(), 2);
@@ -153,7 +153,7 @@ fn test_entry_builder_from_entry() {
     
     let original = LedgerEntryBuilder::new()
         .name("Groceries")
-        .currency(usd())
+        .currency(usd_with_amount(dec!(42.50)))
         .amount(dec!(42.50))
         .tag(tag.clone())
         .entry_type(EntryType::Expense)
@@ -173,8 +173,8 @@ fn test_entry_builder_from_entry() {
     
     // Check that unmodified values stayed the same
     assert_eq!(modified.id(), original.id());
-    // Currency from currency_rs returns the amount as a string
-    assert!(modified.currency().to_string().contains("0.00"));
+    // Currency from rusty-money returns the amount as a string
+    assert!(modified.currency().to_string().contains("$42.50"));
     assert_eq!(modified.entry_type(), EntryType::Expense);
     assert!(modified.tags().contains(&tag));
 }
@@ -218,7 +218,7 @@ fn test_entry_summary_and_display() {
     let entry = LedgerEntryBuilder::new()
         .date(date)
         .name("Weekly Groceries")
-        .currency(usd())
+        .currency(usd_with_amount(dec!(125.40)))
         .amount(dec!(125.40))
         .tag(tag1)
         .tag(tag2)
@@ -226,11 +226,11 @@ fn test_entry_summary_and_display() {
         .build()
         .unwrap();
         
-    // The format has changed with currency_rs
+    // The format has changed with rusty-money
     let summary = entry.summary();
     assert!(summary.contains("2023-01-15"));
     assert!(summary.contains("Weekly Groceries"));
-    assert!(summary.contains("0.00")); // Currency shows the amount
+    assert!(summary.contains("$125.40")); // Currency shows the amount
     assert!(summary.contains("125.40"));
     assert!(summary.contains("food"));
     assert!(summary.contains("groceries"));
@@ -239,7 +239,7 @@ fn test_entry_summary_and_display() {
     let entry_no_tags = LedgerEntryBuilder::new()
         .date(date)
         .name("Weekly Groceries")
-        .currency(usd())
+        .currency(usd_with_amount(dec!(125.40)))
         .amount(dec!(125.40))
         .entry_type(EntryType::Expense)
         .build()
@@ -248,7 +248,7 @@ fn test_entry_summary_and_display() {
     let summary = entry_no_tags.summary();
     assert!(summary.contains("2023-01-15"));
     assert!(summary.contains("Weekly Groceries"));
-    assert!(summary.contains("0.00")); // Currency shows the amount
+    assert!(summary.contains("$125.40")); // Currency shows the amount
     assert!(summary.contains("125.40"));
     assert!(!summary.contains("food"));
     assert!(!summary.contains("groceries"));
@@ -258,7 +258,7 @@ fn test_entry_summary_and_display() {
 fn test_entry_with_updated_at() {
     let entry = LedgerEntryBuilder::new()
         .name("Groceries")
-        .currency(usd())
+        .currency(usd_with_amount(dec!(42.50)))
         .amount(dec!(42.50))
         .entry_type(EntryType::Expense)
         .build()
@@ -292,7 +292,7 @@ fn test_entry_builder_tags_method() {
     
     let entry = LedgerEntryBuilder::new()
         .name("Groceries")
-        .currency(usd())
+        .currency(usd_with_amount(dec!(42.50)))
         .amount(dec!(42.50))
         .tags(tags)
         .entry_type(EntryType::Expense)
