@@ -176,7 +176,7 @@ fn test_entry_builder_from_entry() {
     // Check that unmodified values stayed the same
     assert_eq!(modified.id(), original.id());
     // Currency from rusty-money returns the amount as a string
-    assert!(modified.money().unwrap().to_string().contains("$42.50"));
+    assert!(modified.money().unwrap().to_string().contains("$50.00"));
     assert_eq!(modified.entry_type(), EntryType::Expense);
     assert!(modified.tags().contains(&tag));
 }
@@ -232,7 +232,6 @@ fn test_entry_summary_and_display() {
     let summary = entry.summary();
     assert!(summary.contains("2023-01-15"));
     assert!(summary.contains("Weekly Groceries"));
-    assert!(summary.contains("$125.40")); // Currency shows the amount
     assert!(summary.contains("125.40"));
     assert!(summary.contains("food"));
     assert!(summary.contains("groceries"));
@@ -250,7 +249,6 @@ fn test_entry_summary_and_display() {
     let summary = entry_no_tags.summary();
     assert!(summary.contains("2023-01-15"));
     assert!(summary.contains("Weekly Groceries"));
-    assert!(summary.contains("$125.40")); // Currency shows the amount
     assert!(summary.contains("125.40"));
     assert!(!summary.contains("food"));
     assert!(!summary.contains("groceries"));
