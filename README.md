@@ -22,13 +22,16 @@ beans/
 │   ├── src/
 │   │   ├── error.rs    # ✅ Error types
 │   │   ├── lib.rs      # ✅ Public API
-│   │   ├── models/     # TODO: Domain models
-│   │   ├── database/   # TODO: SQLite persistence
-│   │   ├── ledger/     # TODO: Ledger manager
-│   │   ├── currency/   # TODO: Currency conversion
-│   │   └── reporting/  # TODO: Analytics & reporting
-│   ├── tests/          # TODO: Integration tests
-│   └── examples/       # TODO: Usage examples
+│   │   ├── models/     # ✅ Domain models
+│   │   │   ├── currency.rs  # ✅ Currency type with rusty-money
+│   │   │   ├── entry.rs     # ✅ LedgerEntry with builder
+│   │   │   └── tag.rs       # ✅ Tag with validation
+│   │   ├── database/   # 🚧 SQLite persistence
+│   │   ├── ledger/     # 🚧 Ledger manager
+│   │   ├── currency/   # 🚧 Currency conversion
+│   │   └── reporting/  # 🚧 Analytics & reporting
+│   ├── tests/          # ✅ Integration tests for models
+│   └── examples/       # ✅ Usage examples for currency
 └── beans/              # Binary crate (UI application)
     └── src/
         └── main.rs     # ✅ Placeholder (UI in Phase 2)
@@ -43,9 +46,11 @@ beans/
 - ✅ Error handling with thiserror
 - ✅ Dependencies configured (rusqlite, serde, chrono, reqwest, etc.)
 - ✅ Basic compilation verified
+- ✅ Currency implementation with rusty-money (type-safe, with proper error handling)
+- ✅ Tag model with validation and normalization
+- ✅ LedgerEntry model with builder pattern
 
 **In Progress:**
-- 🚧 Domain models (LedgerEntry, Currency, Tag)
 - 🚧 Database layer with SQLite  
 - 🚧 Ledger manager service
 - 🚧 Currency conversion with external API
@@ -177,14 +182,18 @@ While AI provided significant assistance, all code has been reviewed and validat
 ## Roadmap
 
 1. ✅ Initialize project structure
-2. 🚧 Complete core library implementation
-3. 🚧 Add comprehensive tests (unit + integration)
-4. 🚧 Write documentation and examples
-5. [ ] Review and refine Phase 1
-6. [ ] Implement UI with Ribir 0.2.x
-7. [ ] Add graph visualization
-8. [ ] Package and distribute
+2. ✅ Implement domain models (Currency, Tag, LedgerEntry)
+3. 🚧 Implement database layer with SQLite
+4. 🚧 Implement ledger manager service
+5. 🚧 Implement currency conversion with external API
+6. 🚧 Implement reporting and analytics
+7. 🚧 Add comprehensive tests (unit + integration)
+8. 🚧 Write documentation and examples
+9. [ ] Review and refine Phase 1
+10. [ ] Implement UI with Ribir 0.2.x
+11. [ ] Add graph visualization
+12. [ ] Package and distribute
 
 ---
 
-**Status**: Phase 1 - Core Library Development (Partial)
+**Status**: Phase 1 - Core Library Development (In Progress)
