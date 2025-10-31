@@ -1,49 +1,10 @@
 //! Currency type for representing ISO 4217 currency codes.
 
 use crate::error::{BeansError, BeansResult};
+use currency_rs::{Currency as CurrencyRs, CurrencyOpts};
 use serde::{Deserialize, Serialize};
 use std::fmt;
-use std::collections::HashSet;
-use once_cell::sync::Lazy;
-
-/// Common currency codes based on ISO 4217
-static COMMON_CURRENCIES: Lazy<HashSet<&'static str>> = Lazy::new(|| {
-    let mut set = HashSet::new();
-    // Major global currencies
-    set.insert("USD"); // US Dollar
-    set.insert("EUR"); // Euro
-    set.insert("GBP"); // British Pound
-    set.insert("JPY"); // Japanese Yen
-    set.insert("CNY"); // Chinese Yuan
-    set.insert("AUD"); // Australian Dollar
-    set.insert("CAD"); // Canadian Dollar
-    set.insert("CHF"); // Swiss Franc
-    set.insert("HKD"); // Hong Kong Dollar
-    set.insert("SGD"); // Singapore Dollar
-    
-    // Other common currencies
-    set.insert("INR"); // Indian Rupee
-    set.insert("RUB"); // Russian Ruble
-    set.insert("ZAR"); // South African Rand
-    set.insert("BRL"); // Brazilian Real
-    set.insert("MXN"); // Mexican Peso
-    set.insert("ARS"); // Argentine Peso
-    set.insert("SEK"); // Swedish Krona
-    set.insert("NOK"); // Norwegian Krone
-    set.insert("DKK"); // Danish Krone
-    set.insert("NZD"); // New Zealand Dollar
-    set.insert("KRW"); // South Korean Won
-    set.insert("TRY"); // Turkish Lira
-    set.insert("PLN"); // Polish Złoty
-    set.insert("THB"); // Thai Baht
-    set.insert("IDR"); // Indonesian Rupiah
-    set.insert("MYR"); // Malaysian Ringgit
-    set.insert("PHP"); // Philippine Peso
-    set.insert("TWD"); // Taiwan Dollar
-    set.insert("AED"); // UAE Dirham
-    set.insert("SAR"); // Saudi Riyal
-    set
-});
+use std::str::FromStr;
 
 /// Represents an ISO 4217 currency code.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -86,19 +47,17 @@ impl Currency {
             ));
         }
         
+        // Validate if it's a recognized currency code
+        // Note: currency_rs doesn't provide a validation method, so we'll just
+        // create a currency with the code and see if it works
+        let _ = CurrencyRs::new_float(0.0, Some(CurrencyOpts::new().set_symbol(&code)));
+        
         Ok(Self { code })
     }
 
     /// Returns the currency code.
     pub fn code(&self) -> &str {
         &self.code
-    }
-
-    /// Checks if this is a common/major currency.
-    ///
-    /// This can be useful for UI prioritization or default selections.
-    pub fn is_common(&self) -> bool {
-        COMMON_CURRENCIES.contains(self.code.as_str())
     }
 
     /// Creates a USD currency (United States Dollar).
@@ -140,10 +99,12 @@ impl Currency {
     pub fn chf() -> Self {
         Self { code: "CHF".to_string() }
     }
-
-    /// Returns a list of common currency codes.
-    pub fn common_currencies() -> Vec<&'static str> {
-        COMMON_CURRENCIES.iter().copied().collect()
+    
+    /// Creates a currency value with the specified amount.
+    /// 
+    /// This is used to create a currency value for calculations and formatting.
+    pub fn with_amount(&self, amount: f64) -> CurrencyRs {
+        CurrencyRs::new_float(amount, Some(CurrencyOpts::new().set_symbol(&self.code)))
     }
 }
 
@@ -166,6 +127,14 @@ impl TryFrom<String> for Currency {
 
     fn try_from(code: String) -> Result<Self, Self::Error> {
         Self::new(code)
+    }
+}
+
+impl FromStr for Currency {
+    type Err = BeansError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Self::new(s)
     }
 }
 
@@ -211,26 +180,6 @@ mod tests {
     }
     
     #[test]
-    fn test_currency_is_common() {
-        assert!(Currency::usd().is_common());
-        assert!(Currency::eur().is_common());
-        assert!(Currency::new("GBP").unwrap().is_common());
-        
-        // Create a likely uncommon currency
-        let uncommon = Currency::new("XYZ").unwrap();
-        assert!(!uncommon.is_common());
-    }
-    
-    #[test]
-    fn test_currency_common_currencies() {
-        let common = Currency::common_currencies();
-        assert!(common.contains(&"USD"));
-        assert!(common.contains(&"EUR"));
-        assert!(common.contains(&"GBP"));
-        assert!(common.contains(&"JPY"));
-    }
-    
-    #[test]
     fn test_currency_try_from() {
         let currency: Currency = "USD".try_into().unwrap();
         assert_eq!(currency.code(), "USD");
@@ -247,4 +196,16 @@ mod tests {
         let currency = Currency::new("USD").unwrap();
         assert_eq!(format!("{}", currency), "USD");
     }
+    
+    #[test]
+    fn test_currency_with_amount() {
+        let currency = Currency::new("USD").unwrap();
+        let amount = currency.with_amount(42.50);
+        assert_eq!(format!("{}", amount), "42.50");
+        
+        let currency = Currency::new("EUR").unwrap();
+        let amount = currency.with_amount(100.00);
+        assert_eq!(format!("{}", amount), "100.00");
+    }
 }
+

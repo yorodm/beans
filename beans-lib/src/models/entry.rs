@@ -4,6 +4,7 @@ use crate::error::{BeansError, BeansResult};
 use crate::models::{Currency, Tag};
 use chrono::{DateTime, Utc};
 use rust_decimal::Decimal;
+use rust_decimal::prelude::ToPrimitive;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::fmt;
@@ -180,12 +181,13 @@ impl LedgerEntry {
                 .join(", "))
         };
         
+        let formatted_amount = self.currency.with_amount(self.amount.to_f64().unwrap_or(0.0));
         format!(
-            "{} {} ({} {:.2}){}",
+            "{} {} ({} {}){}",
             self.date.format("%Y-%m-%d"),
             self.name,
             self.currency,
-            self.amount,
+            formatted_amount,
             tags_str
         )
     }
