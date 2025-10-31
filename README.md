@@ -61,6 +61,39 @@ beans/
 - [ ] Currency conversion UI
 - [ ] Settings and preferences
 
+## Development Environment
+
+### Using Nix Flake (Recommended)
+
+This project includes a Nix flake for reproducible development environments across all platforms.
+
+**Prerequisites:**
+- [Nix package manager](https://nixos.org/download.html) with flakes enabled
+- Optional: [direnv](https://direnv.net/) for automatic environment activation
+
+**Setup:**
+
+```bash
+# Enter development shell directly
+nix develop
+
+# OR with direnv (automatic activation)
+direnv allow
+```
+
+The development environment provides:
+- Rust toolchain with rustfmt, clippy, and rust-analyzer
+- All required system dependencies (SQLite, OpenSSL)
+- Development tools (cargo-watch, cargo-audit, sqlitebrowser)
+- Cross-platform compatibility (Linux, macOS)
+
+### Using Cargo Only
+
+If you prefer not to use Nix, you'll need to install the following dependencies manually:
+- Rust toolchain (via [rustup](https://rustup.rs/))
+- SQLite development libraries
+- OpenSSL development libraries
+
 ## Building
 
 ```bash
@@ -75,6 +108,9 @@ cargo test
 
 # Build documentation
 cargo doc --open
+
+# Development with auto-reload
+cargo watch -x run
 ```
 
 ## Architecture
@@ -141,4 +177,3 @@ This project is currently in early development. Phase 1 (core library) must be c
 ---
 
 **Status**: Phase 1 - Core Library Development (Partial)
-
