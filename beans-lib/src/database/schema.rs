@@ -20,25 +20,26 @@ pub fn initialize_schema(conn: &Connection) -> BeansResult<()> {
             version INTEGER NOT NULL,
             updated_at TEXT NOT NULL
         );
-        "
-    ).map_err(|e| BeansError::database(format!("Failed to create schema_version table: {}", e)))?;
-    
+        ",
+    )
+    .map_err(|e| BeansError::database(format!("Failed to create schema_version table: {}", e)))?;
+
     // Get current schema version from database
     let db_version = get_schema_version(conn)?;
-    
+
     // If the database is new (version 0), create the initial schema
     if db_version == 0 {
         create_initial_schema(conn)?;
         set_schema_version(conn, CURRENT_SCHEMA_VERSION)?;
         return Ok(());
     }
-    
+
     // If the database has an older version, run migrations
     if db_version < CURRENT_SCHEMA_VERSION {
         run_migrations(conn, db_version, CURRENT_SCHEMA_VERSION)?;
         set_schema_version(conn, CURRENT_SCHEMA_VERSION)?;
     }
-    
+
     Ok(())
 }
 
@@ -79,8 +80,9 @@ fn create_initial_schema(conn: &Connection) -> BeansResult<()> {
         CREATE INDEX IF NOT EXISTS idx_entries_entry_type ON entries (entry_type);
         CREATE INDEX IF NOT EXISTS idx_entries_currency ON entries (currency);
         CREATE INDEX IF NOT EXISTS idx_tags_name ON tags (name);
-        "
-    ).map_err(|e| BeansError::database(format!("Failed to create initial schema: {}", e)))?;
+        ",
+    )
+    .map_err(|e| BeansError::database(format!("Failed to create initial schema: {}", e)))?;
 
     Ok(())
 }
@@ -89,14 +91,14 @@ fn create_initial_schema(conn: &Connection) -> BeansResult<()> {
 fn run_migrations(conn: &Connection, from_version: i64, to_version: i64) -> BeansResult<()> {
     // Define migrations as a map from version to migration function
     let migrations: HashMap<i64, fn(&Connection) -> BeansResult<()>> = HashMap::new();
-    
+
     // Run migrations in order
-    for version in from_version+1..=to_version {
+    for version in from_version + 1..=to_version {
         if let Some(migration) = migrations.get(&version) {
             migration(conn)?;
         }
     }
-    
+
     Ok(())
 }
 
@@ -105,39 +107,45 @@ fn run_migrations(conn: &Connection, from_version: i64, to_version: i64) -> Bean
 /// Returns 0 if the schema_version table doesn't exist or is empty.
 pub fn get_schema_version(conn: &Connection) -> BeansResult<i64> {
     // Check if the schema_version table exists
-    let table_exists: bool = conn.query_row(
-        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='schema_version'",
-        [],
-        |_| Ok(true)
-    ).unwrap_or(false);
-    
+    let table_exists: bool = conn
+        .query_row(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='schema_version'",
+            [],
+            |_| Ok(true),
+        )
+        .unwrap_or(false);
+
     if !table_exists {
         return Ok(0);
     }
-    
+
     // Get the version
     let version: Result<i64, rusqlite::Error> = conn.query_row(
         "SELECT version FROM schema_version WHERE id = 1",
         [],
-        |row| row.get(0)
+        |row| row.get(0),
     );
-    
+
     match version {
         Ok(v) => Ok(v),
         Err(rusqlite::Error::QueryReturnedNoRows) => Ok(0),
-        Err(e) => Err(BeansError::database(format!("Failed to get schema version: {}", e))),
+        Err(e) => Err(BeansError::database(format!(
+            "Failed to get schema version: {}",
+            e
+        ))),
     }
 }
 
 /// Sets the schema version in the database.
 fn set_schema_version(conn: &Connection, version: i64) -> BeansResult<()> {
     let now = chrono::Utc::now().to_rfc3339();
-    
+
     conn.execute(
         "INSERT OR REPLACE INTO schema_version (id, version, updated_at) VALUES (1, ?, ?)",
-        [version, now],
-    ).map_err(|e| BeansError::database(format!("Failed to set schema version: {}", e)))?;
-    
+        (version, now),
+    )
+    .map_err(|e| BeansError::database(format!("Failed to set schema version: {}", e)))?;
+
     Ok(())
 }
 
@@ -146,13 +154,8 @@ fn set_schema_version(conn: &Connection, version: i64) -> BeansResult<()> {
 /// This checks that all required tables and indexes exist.
 pub fn validate_schema(conn: &Connection) -> BeansResult<bool> {
     // List of required tables
-    let required_tables = vec![
-        "entries",
-        "tags",
-        "entry_tags",
-        "schema_version",
-    ];
-    
+    let required_tables = vec!["entries", "tags", "entry_tags", "schema_version"];
+
     // List of required indexes
     let required_indexes = vec![
         "idx_entries_date",
@@ -160,32 +163,36 @@ pub fn validate_schema(conn: &Connection) -> BeansResult<bool> {
         "idx_entries_currency",
         "idx_tags_name",
     ];
-    
+
     // Check tables
     for table in &required_tables {
-        let exists: bool = conn.query_row(
-            "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?",
-            [table],
-            |_| Ok(true)
-        ).unwrap_or(false);
-        
+        let exists: bool = conn
+            .query_row(
+                "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?",
+                [table],
+                |_| Ok(true),
+            )
+            .unwrap_or(false);
+
         if !exists {
             return Ok(false);
         }
     }
-    
+
     // Check indexes
     for index in &required_indexes {
-        let exists: bool = conn.query_row(
-            "SELECT 1 FROM sqlite_master WHERE type='index' AND name=?",
-            [index],
-            |_| Ok(true)
-        ).unwrap_or(false);
-        
+        let exists: bool = conn
+            .query_row(
+                "SELECT 1 FROM sqlite_master WHERE type='index' AND name=?",
+                [index],
+                |_| Ok(true),
+            )
+            .unwrap_or(false);
+
         if !exists {
             return Ok(false);
         }
     }
-    
+
     Ok(true)
 }

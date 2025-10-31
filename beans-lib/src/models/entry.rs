@@ -217,6 +217,8 @@ pub struct LedgerEntryBuilder<'a> {
     description: Option<String>,
     tags: HashSet<Tag>,
     entry_type: Option<EntryType>,
+    created_at: Option<DateTime<Utc>>,
+    updated_at: Option<DateTime<Utc>>,
 }
 
 impl<'a> LedgerEntryBuilder<'a> {
@@ -300,6 +302,16 @@ impl<'a> LedgerEntryBuilder<'a> {
         self
     }
 
+    pub fn created_at(mut self, created_at: DateTime<Utc>) -> Self {
+        self.created_at = Some(created_at);
+        self
+    }
+
+    pub fn updated_at(mut self, uptaded_at: DateTime<Utc>) -> Self {
+        self.updated_at = Some(uptaded_at);
+        self
+    }
+
     /// Builds the ledger entry.
     ///
     /// Returns an error if any required field is missing or invalid.
@@ -340,8 +352,8 @@ impl<'a> LedgerEntryBuilder<'a> {
             description: self.description,
             tags: self.tags,
             entry_type,
-            created_at: now,
-            updated_at: now,
+            created_at: self.created_at.unwrap_or(now),
+            updated_at: self.updated_at.unwrap_or(now),
         })
     }
 
@@ -361,6 +373,8 @@ impl<'a> LedgerEntryBuilder<'a> {
             description: entry.description.clone(),
             tags: entry.tags.clone(),
             entry_type: Some(entry.entry_type),
+            created_at: Some(entry.created_at),
+            updated_at: Some(entry.updated_at),
         }
     }
 }
