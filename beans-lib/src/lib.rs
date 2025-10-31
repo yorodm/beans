@@ -34,7 +34,7 @@
 //! let entry = LedgerEntryBuilder::new()
 //!     .name("Monthly Salary")
 //!     .amount(dec!(5000.00))
-//!     .currency(Currency::usd())
+//!     .currency(beans_lib::models::entry::usd())
 //!     .entry_type(EntryType::Income)
 //!     .description("April salary")
 //!     .tag(Tag::new("salary")?)
@@ -62,8 +62,8 @@
 //! let converter = CurrencyConverter::default();
 //! let amount_in_eur = converter.convert_amount(
 //!     dec!(100.00),
-//!     &Currency::usd(),
-//!     &Currency::eur()
+//!     &beans_lib::models::entry::usd(),
+//!     &beans_lib::models::entry::eur()
 //! ).await?;
 //!
 //! println!("100 USD = {} EUR", amount_in_eur);
@@ -89,7 +89,7 @@
 //!     start,
 //!     end,
 //!     TimePeriod::Daily,
-//!     Some(Currency::usd()),
+//!     Some(beans_lib::models::entry::usd()),
 //!     None
 //! ).await?;
 //!

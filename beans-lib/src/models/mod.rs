@@ -1,9 +1,9 @@
 //! Domain models for the Beans ledger application.
 
-mod currency;
-mod entry;
+pub mod entry;
 mod tag;
 
-pub use currency::Currency;
+// Re-export Currency from currency_rs
+pub use currency_rs::Currency;
 pub use entry::{EntryType, LedgerEntry, LedgerEntryBuilder};
 pub use tag::Tag;

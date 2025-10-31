@@ -31,12 +31,15 @@ impl CurrencyConverter {
     /// Gets the exchange rate between two currencies.
     pub async fn get_exchange_rate(&self, from: &Currency, to: &Currency) -> BeansResult<f64> {
         // Placeholder implementation - will be expanded in final version
-        if from.code() == to.code() {
+        let from_symbol = from.to_string();
+        let to_symbol = to.to_string();
+        
+        if from_symbol == to_symbol {
             return Ok(1.0);
         }
         
         // Check cache first
-        if let Some(rate) = self.cache.get(from.code(), to.code()) {
+        if let Some(rate) = self.cache.get(&from_symbol, &to_symbol) {
             return Ok(rate);
         }
         
@@ -52,7 +55,10 @@ impl CurrencyConverter {
         to: &Currency,
     ) -> BeansResult<Decimal> {
         // Placeholder implementation - will be expanded in final version
-        if from.code() == to.code() {
+        let from_symbol = from.to_string();
+        let to_symbol = to.to_string();
+        
+        if from_symbol == to_symbol {
             return Ok(amount);
         }
         
@@ -63,4 +69,3 @@ impl CurrencyConverter {
         Ok(amount * rate_decimal)
     }
 }
-

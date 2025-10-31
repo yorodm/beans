@@ -23,6 +23,8 @@ tokio = { workspace = true }
 uuid = { workspace = true }
 rust_decimal = { workspace = true }
 log = { workspace = true }
+once_cell = { workspace = true }
+currency_rs = { workspace = true }
 
 [dev-dependencies]
 env_logger = { workspace = true }
