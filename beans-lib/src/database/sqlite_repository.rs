@@ -15,7 +15,7 @@ use uuid::Uuid;
 #[derive(Debug)]
 pub struct SQLiteRepository {
     /// Connection to the SQLite database.
-    pub(crate) conn: Arc<Mutex<Connection>>,
+    pub conn: Arc<Mutex<Connection>>,
 }
 
 impl SQLiteRepository {
