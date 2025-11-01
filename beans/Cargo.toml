@@ -17,6 +17,12 @@ anyhow = { workspace = true }
 log = { workspace = true }
 env_logger = { workspace = true }
 
-# UI dependencies will be added in Phase 2
-# ribir = "0.2"
-
+# UI dependencies
+ribir = "0.2.0"
+chrono = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+rust_decimal = { workspace = true }
+uuid = { workspace = true }
+tokio = { workspace = true }
+rfd = "0.12.0"  # File dialog
