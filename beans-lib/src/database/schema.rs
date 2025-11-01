@@ -14,16 +14,15 @@ pub const CURRENT_SCHEMA_VERSION: i64 = 1;
 /// It also handles schema migrations if the database already exists but has an older schema version.
 pub fn initialize_schema(conn: &Connection) -> BeansResult<()> {
     // Create schema_version table if it doesn't exist
-    conn.execute_batch(
-        "
-        CREATE TABLE IF NOT EXISTS schema_version (
-            id INTEGER PRIMARY KEY CHECK (id = 1),
-            version INTEGER NOT NULL,
-            updated_at TEXT NOT NULL
-        );
-        ",
-    )
-    .map_err(|e| BeansError::database(format!("Failed to create schema_version table: {}", e)))?;
+    let create_schema_version_table = sql::CreateTable::new()
+        .create_table_if_not_exists("schema_version")
+        .column("id INTEGER PRIMARY KEY CHECK (id = 1)")
+        .column("version INTEGER NOT NULL")
+        .column("updated_at TEXT NOT NULL")
+        .as_string();
+        
+    conn.execute(&create_schema_version_table, [])
+        .map_err(|e| BeansError::database(format!("Failed to create schema_version table: {}", e)))?;
 
     // Get current schema version from database
     let db_version = get_schema_version(conn)?;
@@ -189,10 +188,9 @@ pub fn get_schema_version(conn: &Connection) -> BeansResult<i64> {
 fn set_schema_version(conn: &Connection, version: i64) -> BeansResult<()> {
     let now = chrono::Utc::now().to_rfc3339();
 
-    // Note: INSERT OR REPLACE is SQLite-specific syntax
-    // sql_query_builder doesn't have a direct method for this, so we use raw SQL for this specific case
+    // Use sql_query_builder's insert_into method with REPLACE syntax
     let insert_query = sql::Insert::new()
-        .raw("INSERT OR REPLACE INTO schema_version (id, version, updated_at)")
+        .insert_or_replace_into("schema_version (id, version, updated_at)")
         .values("(1, ?, ?)")
         .as_string();
 

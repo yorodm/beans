@@ -32,7 +32,11 @@ impl SQLiteRepository {
             .map_err(|e| BeansError::database(format!("Failed to open database: {}", e)))?;
 
         // Enable foreign keys
-        conn.execute("PRAGMA foreign_keys = ON", [])
+        let pragma_query = sql::Pragma::new()
+            .pragma("foreign_keys = ON")
+            .as_string();
+            
+        conn.execute(&pragma_query, [])
             .map_err(|e| BeansError::database(format!("Failed to enable foreign keys: {}", e)))?;
 
         Ok(Self::new(conn))
@@ -45,7 +49,11 @@ impl SQLiteRepository {
         })?;
 
         // Enable foreign keys
-        conn.execute("PRAGMA foreign_keys = ON", [])
+        let pragma_query = sql::Pragma::new()
+            .pragma("foreign_keys = ON")
+            .as_string();
+            
+        conn.execute(&pragma_query, [])
             .map_err(|e| BeansError::database(format!("Failed to enable foreign keys: {}", e)))?;
 
         Ok(Self::new(conn))
