@@ -37,7 +37,7 @@ pub enum BeansError {
 
     /// JSON parsing errors.
     #[error("JSON error: {0}")]
-    Json(#[from] serde_json::Error),
+    Json(String),
 
     /// Ledger file not found.
     #[error("Ledger file not found: {0}")]
@@ -62,11 +62,11 @@ pub enum BeansError {
     /// Generic error for other cases.
     #[error("Operation failed: {0}")]
     Other(String),
-    
+
     /// Feature not yet implemented (placeholder).
     #[error("Not implemented: {0}")]
     NotImplemented(String),
-    
+
     /// Error converting between types.
     #[error("Conversion error: {0}")]
     ConversionError(String),
