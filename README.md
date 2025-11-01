@@ -11,7 +11,7 @@ A multi-platform ledger application built with Rust, designed for tracking incom
 - ✅ **Currency Conversion**: Convert between currencies using live exchange rates
 - ✅ **Reports & Analytics**: Generate income vs expense reports with time-series data
 - ✅ **Multi-Platform**: Works on Windows, macOS, and Linux
-- 🚧 **UI (Phase 2)**: Graphical interface using Ribir 0.2.x (coming soon)
+- 🚧 **UI (Phase 2)**: Graphical interface using Ribir 0.2.x (in progress)
 
 ## Project Structure
 
@@ -57,14 +57,16 @@ beans/
 - 🚧 Reporting and analytics
 - 🚧 Additional unit and integration tests
 
-### Phase 2: UI Implementation (Planned)
+### Phase 2: UI Implementation (In Progress)
 
-- [ ] Ribir 0.2.x integration
+- [x] Ribir 0.2.x integration
 - [ ] Entry management UI
 - [ ] Filtering and search UI
-- [ ] Graph visualization for income/expenses
+- [x] Graph visualization for income/expenses
 - [ ] Currency conversion UI
 - [ ] Settings and preferences
+
+**Note**: Ribir requires the Rust nightly toolchain. This project is configured to use nightly automatically via the `rust-toolchain.toml` file.
 
 ## Development Environment
 
@@ -87,7 +89,7 @@ direnv allow
 ```
 
 The development environment provides:
-- Rust toolchain with rustfmt, clippy, and rust-analyzer
+- Rust **nightly** toolchain with rustfmt, clippy, and rust-analyzer
 - All required system dependencies (SQLite, OpenSSL)
 - Development tools (cargo-watch, cargo-audit, sqlitebrowser)
 - Cross-platform compatibility (Linux, macOS)
@@ -95,7 +97,11 @@ The development environment provides:
 ### Using Cargo Only
 
 If you prefer not to use Nix, you'll need to install the following dependencies manually:
-- Rust toolchain (via [rustup](https://rustup.rs/))
+- Rust **nightly** toolchain (via [rustup](https://rustup.rs/))
+  ```bash
+  rustup default nightly
+  # Or use the rust-toolchain.toml file (recommended)
+  ```
 - SQLite development libraries
 - OpenSSL development libraries
 

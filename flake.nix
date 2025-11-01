@@ -18,8 +18,8 @@
           inherit system overlays;
         };
         
-        # Use stable Rust with specific extensions
-        rustToolchain = pkgs.rust-bin.stable.latest.default.override {
+        # Use nightly Rust with specific extensions (required for Ribir)
+        rustToolchain = pkgs.rust-bin.nightly.latest.default.override {
           extensions = [ "rust-src" "rust-analyzer" "clippy" "rustfmt" ];
           targets = [ "x86_64-unknown-linux-gnu" "x86_64-apple-darwin" "aarch64-apple-darwin" ];
         };
@@ -94,4 +94,3 @@
       }
     );
 }
-
