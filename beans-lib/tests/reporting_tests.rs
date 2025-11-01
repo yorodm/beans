@@ -5,6 +5,7 @@ mod support;
 use beans_lib::error::BeansResult;
 use beans_lib::ledger::LedgerManager;
 use beans_lib::models::{EntryType, LedgerEntryBuilder, Tag};
+use beans_lib::prelude::IncomeExpenseReport;
 use beans_lib::reporting::{ExportFormat, ReportGenerator, TimePeriod};
 use chrono::{Duration, TimeZone, Utc};
 use rust_decimal_macros::dec;
@@ -385,8 +386,9 @@ async fn test_export_income_expense_report_json() -> BeansResult<()> {
     assert!(json.contains("summary"));
 
     // Verify it can be parsed back
-    let parsed: serde_json::Value = serde_json::from_str(&json).unwrap();
-    assert!(parsed["summary"]["income"].is_number());
+    let parsed = serde_json::from_str::<IncomeExpenseReport>(&json).unwrap();
+    dbg!(&parsed);
+    assert_eq!(parsed.summary.income, dec!(15000.00));
 
     Ok(())
 }
@@ -563,6 +565,7 @@ async fn test_multiple_tags_per_entry() -> BeansResult<()> {
     let report = generator.tagged_report(start, end, None).await?;
 
     // Entry should appear in all tag groups
+    dbg!(&report);
     assert_eq!(
         *report.income_by_tag.get("freelance").unwrap(),
         dec!(1000.00)
@@ -578,4 +581,3 @@ async fn test_multiple_tags_per_entry() -> BeansResult<()> {
 
     Ok(())
 }
-
