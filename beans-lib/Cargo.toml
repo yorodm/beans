@@ -26,6 +26,7 @@ log = { workspace = true }
 once_cell = { workspace = true }
 rusty-money = { workspace = true }
 rust_decimal_macros = "1.39.0"
+sql_query_builder = { version = "2.4", features = ["sqlite"] }
 
 [dev-dependencies]
 env_logger = { workspace = true }

@@ -159,6 +159,7 @@ dependencies = [
  "rusty-money",
  "serde",
  "serde_json",
+ "sql_query_builder",
  "tempfile",
  "thiserror",
  "tokio",
@@ -1645,6 +1646,12 @@ dependencies = [
  "libc",
  "windows-sys 0.60.2",
 ]
+
+[[package]]
+name = "sql_query_builder"
+version = "2.5.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2651412ae7213fc4eb36349c204614c0aee7d7cef23328e10101413781b4b200"
 
 [[package]]
 name = "stable_deref_trait"
