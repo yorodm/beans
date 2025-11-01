@@ -84,22 +84,21 @@ impl CurrencyConverter {
     /// Converts an amount from one currency to another.
     pub async fn convert_amount<'a>(
         &self,
-        amount: Decimal,
         from: &Currency<'a>,
         to: &Currency<'a>,
-    ) -> BeansResult<Decimal> {
+    ) -> BeansResult<Currency<'a>> {
         let from_code = from.code();
         let to_code = to.code();
 
         if from_code == to_code {
-            return Ok(amount);
+            return Ok(from.clone());
         }
 
         let rate = self.get_exchange_rate(from, to).await?;
         let rate_decimal = Decimal::try_from(rate)
             .map_err(|e| BeansError::Other(format!("Failed to convert rate to Decimal: {}", e)))?;
-
-        Ok(amount * rate_decimal)
+        let converted_amount = from.amount() * rate_decimal;
+        Currency::new(converted_amount, to.code())
     }
 
     /// Fetches all exchange rates for a given base currency.

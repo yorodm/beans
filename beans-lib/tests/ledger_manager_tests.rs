@@ -55,7 +55,7 @@ fn test_in_memory_ledger() -> BeansResult<()> {
     // Verify the entry was stored correctly
     assert_eq!(retrieved.name(), entry.name());
     assert_eq!(retrieved.amount(), entry.amount());
-    assert_eq!(retrieved.currency(), entry.currency());
+    assert_eq!(retrieved.currency_code(), entry.currency_code());
     assert_eq!(retrieved.entry_type(), entry.entry_type());
     
     Ok(())
@@ -82,7 +82,7 @@ fn test_file_ledger() -> BeansResult<()> {
     // Verify the entry was stored correctly
     assert_eq!(retrieved.name(), entry.name());
     assert_eq!(retrieved.amount(), entry.amount());
-    assert_eq!(retrieved.currency(), entry.currency());
+    assert_eq!(retrieved.currency_code(), entry.currency_code());
     assert_eq!(retrieved.entry_type(), entry.entry_type());
     
     // Verify the file was created
