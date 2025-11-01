@@ -38,7 +38,7 @@ fn test_entry_type_all() {
 fn test_entry_builder_basic() {
     let entry = LedgerEntryBuilder::new()
         .name("Groceries")
-        .currency(usd().to_owned())
+        .currency_code(usd().to_owned())
         .amount(dec!(42.50))
         .entry_type(EntryType::Expense)
         .build()
@@ -65,7 +65,7 @@ fn test_entry_builder_full() {
         .id(id)
         .date(date)
         .name("Weekly Groceries")
-        .currency(usd().to_owned())
+        .currency_code(usd().to_owned())
         .amount(dec!(125.40))
         .description("Weekly grocery shopping")
         .tag(tag1.clone())
@@ -91,7 +91,7 @@ fn test_entry_builder_full() {
 fn test_entry_builder_validation() {
     // Missing name
     let result = LedgerEntryBuilder::new()
-        .currency(usd().to_owned())
+        .currency_code(usd().to_owned())
         .amount(dec!(42.50))
         .entry_type(EntryType::Expense)
         .build();
@@ -100,7 +100,7 @@ fn test_entry_builder_validation() {
     // Empty name
     let result = LedgerEntryBuilder::new()
         .name("")
-        .currency(usd().to_owned())
+        .currency_code(usd().to_owned())
         .amount(dec!(42.50))
         .entry_type(EntryType::Expense)
         .build();
@@ -117,7 +117,7 @@ fn test_entry_builder_validation() {
     // Missing amount
     let result = LedgerEntryBuilder::new()
         .name("Groceries")
-        .currency(usd().to_owned())
+        .currency_code(usd().to_owned())
         .entry_type(EntryType::Expense)
         .build();
     assert!(result.is_err());
@@ -125,7 +125,7 @@ fn test_entry_builder_validation() {
     // Zero amount
     let result = LedgerEntryBuilder::new()
         .name("Groceries")
-        .currency(usd().to_owned())
+        .currency_code(usd().to_owned())
         .amount(dec!(0))
         .entry_type(EntryType::Expense)
         .build();
@@ -134,7 +134,7 @@ fn test_entry_builder_validation() {
     // Negative amount
     let result = LedgerEntryBuilder::new()
         .name("Groceries")
-        .currency(usd().to_owned())
+        .currency_code(usd().to_owned())
         .amount(dec!(-42.50))
         .entry_type(EntryType::Expense)
         .build();
@@ -143,7 +143,7 @@ fn test_entry_builder_validation() {
     // Missing entry type
     let result = LedgerEntryBuilder::new()
         .name("Groceries")
-        .currency(usd().to_owned())
+        .currency_code(usd().to_owned())
         .amount(dec!(42.50))
         .build();
     assert!(result.is_err());
@@ -155,7 +155,7 @@ fn test_entry_builder_from_entry() {
 
     let original = LedgerEntryBuilder::new()
         .name("Groceries")
-        .currency(usd().to_owned())
+        .currency_code(usd().to_owned())
         .amount(dec!(42.50))
         .tag(tag.clone())
         .entry_type(EntryType::Expense)
@@ -188,7 +188,7 @@ fn test_entry_tags_methods() {
 
     let entry = LedgerEntryBuilder::new()
         .name("Groceries")
-        .currency(usd().to_owned())
+        .currency_code(usd().to_owned())
         .amount(dec!(42.50))
         .tag(tag1)
         .tag(tag2)
@@ -220,7 +220,7 @@ fn test_entry_summary_and_display() {
     let entry = LedgerEntryBuilder::new()
         .date(date)
         .name("Weekly Groceries")
-        .currency(usd().to_owned())
+        .currency_code(usd().to_owned())
         .amount(dec!(125.40))
         .tag(tag1)
         .tag(tag2)
@@ -240,7 +240,7 @@ fn test_entry_summary_and_display() {
     let entry_no_tags = LedgerEntryBuilder::new()
         .date(date)
         .name("Weekly Groceries")
-        .currency(usd().to_owned())
+        .currency_code(usd().to_owned())
         .amount(dec!(125.40))
         .entry_type(EntryType::Expense)
         .build()
@@ -258,7 +258,7 @@ fn test_entry_summary_and_display() {
 fn test_entry_with_updated_at() {
     let entry = LedgerEntryBuilder::new()
         .name("Groceries")
-        .currency(usd().to_owned())
+        .currency_code(usd().to_owned())
         .amount(dec!(42.50))
         .entry_type(EntryType::Expense)
         .build()
@@ -292,7 +292,7 @@ fn test_entry_builder_tags_method() {
 
     let entry = LedgerEntryBuilder::new()
         .name("Groceries")
-        .currency(usd().to_owned())
+        .currency_code(usd().to_owned())
         .amount(dec!(42.50))
         .tags(tags)
         .entry_type(EntryType::Expense)

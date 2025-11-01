@@ -30,18 +30,19 @@ pub fn create_test_repository() -> BeansResult<SQLiteRepository> {
 /// Validates that a file path has a .bean extension
 pub fn validate_bean_extension(path: &std::path::Path) -> BeansResult<()> {
     use beans_lib::error::BeansError;
-    
+
     if let Some(ext) = path.extension() {
         if ext != "bean" {
-            return Err(BeansError::InvalidLedgerFormat(
-                format!("Ledger file must have .bean extension, got: {:?}", ext)
-            ));
+            return Err(BeansError::InvalidLedgerFormat(format!(
+                "Ledger file must have .bean extension, got: {:?}",
+                ext
+            )));
         }
     } else {
         return Err(BeansError::InvalidLedgerFormat(
-            "Ledger file must have .bean extension".to_string()
+            "Ledger file must have .bean extension".to_string(),
         ));
     }
-    
+
     Ok(())
 }

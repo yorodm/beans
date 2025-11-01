@@ -129,7 +129,7 @@ impl CurrencyConverter {
                     )));
                 }
             }
-            Err(e) if self.fallback_url.is_some() => {
+            Err(_) if self.fallback_url.is_some() => {
                 // If primary fails with an error, try fallback
                 let fallback_url = format!(
                     "{}/currencies/{}.json",
@@ -146,7 +146,10 @@ impl CurrencyConverter {
         };
 
         // Parse the JSON response
-        let json: Value = response.json().await.map_err(|e| BeansError::Json(e.to_string()))?;
+        let json: Value = response
+            .json()
+            .await
+            .map_err(|e| BeansError::Json(e.to_string()))?;
 
         // Extract the rates
         let rates = json.get(base_currency).ok_or_else(|| {

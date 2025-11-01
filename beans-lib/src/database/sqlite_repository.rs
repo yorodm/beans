@@ -218,7 +218,7 @@ impl SQLiteRepository {
             .id(id)
             .date(date)
             .name(name)
-            .currency(currency.iso_alpha_code.to_owned())
+            .currency_code(currency.iso_alpha_code.to_owned())
             .amount(amount) // Add the amount to the builder
             .entry_type(entry_type);
 

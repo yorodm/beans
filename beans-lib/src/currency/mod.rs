@@ -5,4 +5,3 @@ mod converter;
 
 pub use cache::ExchangeRateCache;
 pub use converter::CurrencyConverter;
-

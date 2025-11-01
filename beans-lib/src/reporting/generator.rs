@@ -6,8 +6,8 @@ use crate::error::{BeansError, BeansResult};
 use crate::ledger::LedgerManager;
 use crate::models::{Currency, EntryType};
 use crate::reporting::types::{
-    ExportFormat, IncomeExpenseReport, PeriodSummary, TaggedReport, TimeSeriesData,
-    TimeSeriesPoint, TimePeriod,
+    ExportFormat, IncomeExpenseReport, PeriodSummary, TaggedReport, TimePeriod, TimeSeriesData,
+    TimeSeriesPoint,
 };
 use chrono::{DateTime, Datelike, Duration, Utc};
 use rust_decimal::Decimal;
@@ -50,7 +50,7 @@ impl<'a> ReportGenerator<'a> {
         }
 
         // Create filters for income and expenses
-        let mut income_filter = EntryFilter {
+        let income_filter = EntryFilter {
             start_date: Some(start_date),
             end_date: Some(end_date),
             entry_type: Some(EntryType::Income),
@@ -58,7 +58,7 @@ impl<'a> ReportGenerator<'a> {
             ..Default::default()
         };
 
-        let mut expense_filter = EntryFilter {
+        let expense_filter = EntryFilter {
             start_date: Some(start_date),
             end_date: Some(end_date),
             entry_type: Some(EntryType::Expense),
@@ -140,8 +140,7 @@ impl<'a> ReportGenerator<'a> {
 
         for entry in entries {
             let amount = if let Some(ref target_curr) = target_currency {
-                self.convert_amount(&entry.currency()?, target_curr)
-                    .await?
+                self.convert_amount(&entry.currency()?, target_curr).await?
             } else {
                 entry.amount()
             };
@@ -189,8 +188,7 @@ impl<'a> ReportGenerator<'a> {
 
         for entry in entries {
             let amount = if let Some(ref target_curr) = target_currency {
-                self.convert_amount(&entry.currency()?, target_curr)
-                    .await?
+                self.convert_amount(&entry.currency()?, target_curr).await?
             } else {
                 entry.amount()
             };
@@ -290,8 +288,7 @@ impl<'a> ReportGenerator<'a> {
         for entry in entries {
             let bucket = self.get_bucket_for_date(entry.date(), period);
             let amount = if let Some(target_curr) = target_currency {
-                self.convert_amount(&entry.currency()?, target_curr)
-                    .await?
+                self.convert_amount(&entry.currency()?, target_curr).await?
             } else {
                 entry.amount()
             };
@@ -304,7 +301,10 @@ impl<'a> ReportGenerator<'a> {
             .into_iter()
             .map(|timestamp| TimeSeriesPoint {
                 timestamp,
-                value: bucket_values.get(&timestamp).copied().unwrap_or(Decimal::ZERO),
+                value: bucket_values
+                    .get(&timestamp)
+                    .copied()
+                    .unwrap_or(Decimal::ZERO),
             })
             .collect();
 
@@ -341,10 +341,7 @@ impl<'a> ReportGenerator<'a> {
         match period {
             TimePeriod::Daily => {
                 // Start of day
-                date.date_naive()
-                    .and_hms_opt(0, 0, 0)
-                    .unwrap()
-                    .and_utc()
+                date.date_naive().and_hms_opt(0, 0, 0).unwrap().and_utc()
             }
             TimePeriod::Weekly => {
                 // Start of week (Monday)
@@ -518,7 +515,11 @@ impl<'a> ReportGenerator<'a> {
                 .get(&tag)
                 .copied()
                 .unwrap_or(Decimal::ZERO);
-            let net = report.net_by_tag.get(&tag).copied().unwrap_or(Decimal::ZERO);
+            let net = report
+                .net_by_tag
+                .get(&tag)
+                .copied()
+                .unwrap_or(Decimal::ZERO);
 
             csv.push_str(&format!("{},{},{},{}\n", tag, income, expenses, net));
         }

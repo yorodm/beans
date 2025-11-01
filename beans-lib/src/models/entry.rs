@@ -171,7 +171,7 @@ impl LedgerEntry {
     pub fn currency<'a>(&self) -> BeansResult<Currency<'a>> {
         // Generates a Currency given the value of code and amount on this entry
         let c = Currency::new(self.amount, &self.currency_code);
-        return c
+        return c;
     }
     /// Returns a summary string of this entry.
     ///
@@ -257,7 +257,7 @@ impl LedgerEntryBuilder {
     /// Sets the currency of the transaction.
     ///
     /// This field is required.
-    pub fn currency(mut self, currency_code: String) -> Self {
+    pub fn currency_code(mut self, currency_code: String) -> Self {
         self.currency_code = Some(currency_code);
         self
     }

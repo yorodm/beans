@@ -44,35 +44,35 @@ impl Tag {
     /// ```
     pub fn new(name: impl AsRef<str>) -> BeansResult<Self> {
         let name = name.as_ref().trim().to_lowercase();
-        
+
         // Check if empty
         if name.is_empty() {
-            return Err(BeansError::validation(
-                "Tag name cannot be empty"
-            ));
+            return Err(BeansError::validation("Tag name cannot be empty"));
         }
-        
+
         // Check length
         if name.len() > MAX_TAG_LENGTH {
-            return Err(BeansError::validation(
-                format!("Tag name cannot exceed {} characters", MAX_TAG_LENGTH)
-            ));
+            return Err(BeansError::validation(format!(
+                "Tag name cannot exceed {} characters",
+                MAX_TAG_LENGTH
+            )));
         }
-        
+
         // Check for invalid characters (allow alphanumeric, hyphens, and underscores)
-        if !name.chars().all(|c| c.is_alphanumeric() || c == '-' || c == '_') {
+        if !name
+            .chars()
+            .all(|c| c.is_alphanumeric() || c == '-' || c == '_')
+        {
             return Err(BeansError::validation(
-                "Tag name can only contain letters, numbers, hyphens, and underscores"
+                "Tag name can only contain letters, numbers, hyphens, and underscores",
             ));
         }
-        
+
         // Check for spaces
         if name.contains(' ') {
-            return Err(BeansError::validation(
-                "Tag name cannot contain spaces"
-            ));
+            return Err(BeansError::validation("Tag name cannot contain spaces"));
         }
-        
+
         Ok(Self { name })
     }
 
@@ -80,7 +80,7 @@ impl Tag {
     pub fn name(&self) -> &str {
         &self.name
     }
-    
+
     /// Creates a tag from a string without validation.
     ///
     /// This is intended for internal use only, such as when loading tags from a database
@@ -93,7 +93,7 @@ impl Tag {
     pub(crate) fn from_raw(name: String) -> Self {
         Self { name }
     }
-    
+
     /// Attempts to create multiple tags from a comma-separated string.
     ///
     /// Returns a vector of valid tags. If any tag is invalid, returns an error.
@@ -112,13 +112,13 @@ impl Tag {
         if tags_str.is_empty() {
             return Ok(Vec::new());
         }
-        
+
         let mut tags = Vec::new();
         for tag_str in tags_str.split(',') {
             let tag = Self::new(tag_str)?;
             tags.push(tag);
         }
-        
+
         Ok(tags)
     }
 }
@@ -152,5 +152,3 @@ impl TryFrom<String> for Tag {
         Self::new(name)
     }
 }
-
-

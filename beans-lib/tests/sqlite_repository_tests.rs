@@ -31,7 +31,7 @@ fn create_test_entry(name: &str, entry_type: EntryType) -> BeansResult<LedgerEnt
     let mut builder = LedgerEntryBuilder::new()
         .name(name)
         .amount(amount)
-        .currency(usd().to_owned())
+        .currency_code(usd().to_owned())
         .entry_type(entry_type);
 
     // Add tags based on entry type
@@ -93,7 +93,7 @@ fn test_update_entry() -> BeansResult<()> {
         .date(entry.date())
         .name("Updated Entry")
         .amount(dec!(200.00))
-        .currency(usd().to_owned())
+        .currency_code(usd().to_owned())
         .entry_type(entry.entry_type())
         .description("Updated description")
         .tag(Tag::new("updated").unwrap());
@@ -195,7 +195,7 @@ fn test_date_filtering() -> BeansResult<()> {
     let entry1 = LedgerEntryBuilder::new()
         .name("Yesterday Entry")
         .amount(dec!(100.00))
-        .currency(usd().to_owned())
+        .currency_code(usd().to_owned())
         .entry_type(EntryType::Income)
         .date(yesterday)
         .build()?;
@@ -203,7 +203,7 @@ fn test_date_filtering() -> BeansResult<()> {
     let entry2 = LedgerEntryBuilder::new()
         .name("Tomorrow Entry")
         .amount(dec!(200.00))
-        .currency(usd().to_owned())
+        .currency_code(usd().to_owned())
         .entry_type(EntryType::Income)
         .date(tomorrow)
         .build()?;
@@ -244,7 +244,7 @@ fn test_multiple_tag_filtering() -> BeansResult<()> {
     let entry = LedgerEntryBuilder::new()
         .name("Multi-tag Entry")
         .amount(dec!(100.00))
-        .currency(usd().to_owned())
+        .currency_code(usd().to_owned())
         .entry_type(EntryType::Income)
         .tag(Tag::new("tag1").unwrap())
         .tag(Tag::new("tag2").unwrap())
@@ -292,7 +292,7 @@ fn test_pagination() -> BeansResult<()> {
         let entry = LedgerEntryBuilder::new()
             .name(&format!("Entry {}", i))
             .amount(dec!(100.00))
-            .currency(usd().to_owned())
+            .currency_code(usd().to_owned())
             .entry_type(EntryType::Income)
             .build()?;
 
@@ -385,7 +385,7 @@ fn test_non_existent_entry() -> BeansResult<()> {
         .id(non_existent_id)
         .name("Non-existent Entry")
         .amount(dec!(100.00))
-        .currency(usd().to_owned())
+        .currency_code(usd().to_owned())
         .entry_type(EntryType::Income)
         .build()?;
 
