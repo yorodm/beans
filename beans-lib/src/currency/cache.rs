@@ -7,7 +7,6 @@ use std::time::{Duration, Instant};
 /// Cache for exchange rates with time-to-live (TTL).
 #[derive(Debug, Clone)]
 pub struct ExchangeRateCache {
-    // Placeholder implementation - will be expanded in final version
     cache: Arc<Mutex<HashMap<String, (f64, Instant)>>>,
     ttl: Duration,
 }
@@ -28,7 +27,6 @@ impl ExchangeRateCache {
 
     /// Gets a rate from the cache.
     pub fn get(&self, from: &str, to: &str) -> Option<f64> {
-        // Placeholder implementation - will be expanded in final version
         let key = Self::make_key(from, to);
         let cache = self.cache.lock().unwrap();
         
@@ -43,16 +41,27 @@ impl ExchangeRateCache {
 
     /// Puts a rate into the cache.
     pub fn put(&self, from: &str, to: &str, rate: f64) {
-        // Placeholder implementation - will be expanded in final version
         let key = Self::make_key(from, to);
         let mut cache = self.cache.lock().unwrap();
         
         cache.insert(key, (rate, Instant::now()));
     }
 
+    /// Puts multiple rates into the cache at once.
+    /// 
+    /// This is used when we fetch all rates for a base currency from the API.
+    pub fn put_all(&self, from: &str, rates: HashMap<String, f64>) {
+        let mut cache = self.cache.lock().unwrap();
+        let now = Instant::now();
+        
+        for (to, rate) in rates {
+            let key = Self::make_key(from, &to);
+            cache.insert(key, (rate, now));
+        }
+    }
+
     /// Clears the cache.
     pub fn clear(&self) {
-        // Placeholder implementation - will be expanded in final version
         let mut cache = self.cache.lock().unwrap();
         cache.clear();
     }
@@ -62,4 +71,3 @@ impl ExchangeRateCache {
         format!("{}:{}", from.to_uppercase(), to.to_uppercase())
     }
 }
-
