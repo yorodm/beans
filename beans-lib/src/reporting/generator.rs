@@ -9,7 +9,7 @@ use crate::reporting::types::{
     ExportFormat, IncomeExpenseReport, PeriodSummary, TaggedReport, TimeSeriesData,
     TimeSeriesPoint, TimePeriod,
 };
-use chrono::{DateTime, Datelike, Duration, Timelike, Utc};
+use chrono::{DateTime, Datelike, Duration, Utc};
 use rust_decimal::Decimal;
 use std::collections::HashMap;
 
@@ -21,7 +21,7 @@ pub struct ReportGenerator<'a> {
 }
 
 impl<'a> ReportGenerator<'a> {
-    /// Creates a new report generator.
+    /// Creates a new report generator for the given ledger.
     pub fn new(ledger: &'a LedgerManager) -> Self {
         Self {
             ledger,
@@ -29,7 +29,7 @@ impl<'a> ReportGenerator<'a> {
         }
     }
 
-    /// Sets the currency converter for the report generator.
+    /// Sets a currency converter for multi-currency reports.
     pub fn with_converter(mut self, converter: CurrencyConverter) -> Self {
         self.converter = Some(converter);
         self
@@ -140,8 +140,7 @@ impl<'a> ReportGenerator<'a> {
 
         for entry in entries {
             let amount = if let Some(ref target_curr) = target_currency {
-                let from_curr = Currency::new(entry.amount(), &entry.currency())?;
-                self.convert_amount(&from_curr, target_curr)
+                self.convert_amount(&entry.currency()?, target_curr)
                     .await?
             } else {
                 entry.amount()
@@ -190,22 +189,11 @@ impl<'a> ReportGenerator<'a> {
 
         for entry in entries {
             let amount = if let Some(ref target_curr) = target_currency {
-                let from_curr = Currency::new(entry.amount(), &entry.currency())?;
-                self.convert_amount(&from_curr, target_curr)
+                self.convert_amount(&entry.currency()?, target_curr)
                     .await?
             } else {
                 entry.amount()
             };
-
-            // Add to total income/expenses only once per entry
-            match entry.entry_type() {
-                EntryType::Income => {
-                    total_income += amount;
-                }
-                EntryType::Expense => {
-                    total_expenses += amount;
-                }
-            }
 
             // If entry has no tags, use "Untagged"
             let tags: Vec<String> = if entry.tags().is_empty() {
@@ -218,9 +206,11 @@ impl<'a> ReportGenerator<'a> {
                 match entry.entry_type() {
                     EntryType::Income => {
                         *income_by_tag.entry(tag.clone()).or_insert(Decimal::ZERO) += amount;
+                        total_income += amount;
                     }
                     EntryType::Expense => {
                         *expenses_by_tag.entry(tag.clone()).or_insert(Decimal::ZERO) += amount;
+                        total_expenses += amount;
                     }
                 }
             }
@@ -297,8 +287,7 @@ impl<'a> ReportGenerator<'a> {
         for entry in entries {
             let bucket = self.get_bucket_for_date(entry.date(), period);
             let amount = if let Some(target_curr) = target_currency {
-                let from_curr = Currency::new(entry.amount(), &entry.currency())?;
-                self.convert_amount(&from_curr, target_curr)
+                self.convert_amount(&entry.currency()?, target_curr)
                     .await?
             } else {
                 entry.amount()
@@ -434,8 +423,8 @@ impl<'a> ReportGenerator<'a> {
 
         // Use converter if available
         if let Some(ref converter) = self.converter {
-            let converted = converter.convert(from_currency, to_currency).await?;
-            Ok(converted.amount())
+            let converted = converter.convert_amount(from_currency, to_currency).await?;
+            Ok(*converted.amount())
         } else {
             // No converter available
             Err(BeansError::currency(format!(
@@ -540,4 +529,3 @@ impl<'a> ReportGenerator<'a> {
         Ok(csv)
     }
 }
-
