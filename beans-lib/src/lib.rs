@@ -44,8 +44,8 @@ pub mod prelude {
     pub use crate::ledger::LedgerManager;
     pub use crate::models::{Currency, EntryType, LedgerEntry, LedgerEntryBuilder, Tag};
     pub use crate::reporting::{
-        IncomeExpenseReport, PeriodSummary, ReportGenerator, TimePeriod, TimeSeriesData,
-        TimeSeriesPoint,
+        ExportFormat, GroupBy, IncomeExpenseReport, PeriodSummary, ReportGenerator, 
+        TagReport, TagSummary, TimePeriod, TimeSeriesData, TimeSeriesPoint,
     };
 
     // Re-export commonly used external types
