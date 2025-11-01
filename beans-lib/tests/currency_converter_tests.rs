@@ -14,9 +14,10 @@ async fn test_same_currency_conversion() -> BeansResult<()> {
     let converter = CurrencyConverter::default();
     let usd = Currency::new(dec!(100.00), usd())?;
 
-    let result = converter.convert_amount(dec!(100.00), &usd, &usd).await?;
+    let result = converter.convert_amount(&usd, &usd).await?;
 
-    assert_eq!(result, dec!(100.00));
+    assert_eq!(*result.amount(), dec!(100.00));
+    assert_eq!(result.code(), usd.code());
     Ok(())
 }
 
@@ -55,11 +56,11 @@ async fn test_exchange_rate_from_api() -> BeansResult<()> {
     assert_eq!(rate, 0.85);
 
     // Test conversion
-    let result = converter.convert_amount(dec!(100.00), &usd, &eur).await?;
+    let result = converter.convert_amount( &usd, &eur).await?;
 
     // 100 USD * 0.85 = 85 EUR
-    assert_eq!(result, dec!(85.00));
-
+    assert_eq!(*result.amount(), dec!(85.00));
+    assert_eq!(result.code(), eur.code());
     Ok(())
 }
 

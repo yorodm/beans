@@ -9,7 +9,7 @@ use crate::reporting::types::{
     ExportFormat, IncomeExpenseReport, PeriodSummary, TaggedReport, TimeSeriesData,
     TimeSeriesPoint, TimePeriod,
 };
-use chrono::{DateTime, Datelike, Duration, Timelike, Utc};
+use chrono::{DateTime, Datelike, Duration, Utc};
 use rust_decimal::Decimal;
 use std::collections::HashMap;
 
@@ -140,7 +140,7 @@ impl<'a> ReportGenerator<'a> {
 
         for entry in entries {
             let amount = if let Some(ref target_curr) = target_currency {
-                self.convert_amount(entry.amount(), &entry.currency(), target_curr)
+                self.convert_amount(&entry.currency()?, target_curr)
                     .await?
             } else {
                 entry.amount()
@@ -189,7 +189,7 @@ impl<'a> ReportGenerator<'a> {
 
         for entry in entries {
             let amount = if let Some(ref target_curr) = target_currency {
-                self.convert_amount(entry.amount(), &entry.currency(), target_curr)
+                self.convert_amount(&entry.currency()?, target_curr)
                     .await?
             } else {
                 entry.amount()
@@ -287,7 +287,7 @@ impl<'a> ReportGenerator<'a> {
         for entry in entries {
             let bucket = self.get_bucket_for_date(entry.date(), period);
             let amount = if let Some(target_curr) = target_currency {
-                self.convert_amount(entry.amount(), &entry.currency(), target_curr)
+                self.convert_amount(&entry.currency()?, target_curr)
                     .await?
             } else {
                 entry.amount()
@@ -413,25 +413,23 @@ impl<'a> ReportGenerator<'a> {
     /// Converts an amount from one currency to another.
     async fn convert_amount(
         &self,
-        amount: Decimal,
-        from_currency: &str,
+        from_currency: &Currency<'_>,
         to_currency: &Currency<'_>,
     ) -> BeansResult<Decimal> {
         // If currencies are the same, no conversion needed
-        if from_currency == to_currency.code() {
-            return Ok(amount);
+        if from_currency.code() == to_currency.code() {
+            return Ok(*from_currency.amount());
         }
 
         // Use converter if available
         if let Some(ref converter) = self.converter {
-            let from_curr = Currency::new(amount, from_currency)?;
-            let converted = converter.convert(&from_curr, to_currency).await?;
-            Ok(converted.amount())
+            let converted = converter.convert_amount(from_currency, to_currency).await?;
+            Ok(*converted.amount())
         } else {
             // No converter available
             Err(BeansError::currency(format!(
                 "Currency converter not available for conversion from {} to {}",
-                from_currency,
+                from_currency.code(),
                 to_currency.code()
             )))
         }

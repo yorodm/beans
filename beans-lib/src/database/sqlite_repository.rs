@@ -320,7 +320,7 @@ impl Repository for SQLiteRepository {
                 entry.id().to_string(),
                 entry.date().to_rfc3339(),
                 entry.name(),
-                entry.currency(),
+                entry.currency_code(),
                 entry.amount().to_string(),
                 entry.description(),
                 format!("{:?}", entry.entry_type()),
@@ -409,7 +409,7 @@ impl Repository for SQLiteRepository {
             params![
                 entry.date().to_rfc3339(),
                 entry.name(),
-                entry.currency(),
+                entry.currency_code(),
                 entry.amount().to_string(),
                 entry.description(),
                 format!("{:?}", entry.entry_type()),

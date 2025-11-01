@@ -67,7 +67,7 @@ pub struct LedgerEntry {
     /// Name/title of the transaction.
     name: String,
     /// Currency of the transaction (ISO Code).
-    currency: String,
+    currency_code: String,
     /// Amount of the transaction.
     amount: Decimal,
     /// Optional description of the transaction.
@@ -101,8 +101,8 @@ impl LedgerEntry {
     }
 
     /// Returns the currency of the transaction.
-    pub fn currency(&self) -> String {
-        self.currency.clone()
+    pub fn currency_code(&self) -> String {
+        self.currency_code.clone()
     }
 
     /// Returns the amount of the transaction.
@@ -168,9 +168,9 @@ impl LedgerEntry {
         tags.into_iter().any(|tag| self.has_tag(tag.as_ref()))
     }
 
-    pub fn money<'a>(&self) -> BeansResult<Currency<'a>> {
+    pub fn currency<'a>(&self) -> BeansResult<Currency<'a>> {
         // Generates a Currency given the value of code and amount on this entry
-        let c = Currency::new(self.amount, &self.currency);
+        let c = Currency::new(self.amount, &self.currency_code);
         return c
     }
     /// Returns a summary string of this entry.
@@ -196,7 +196,7 @@ impl LedgerEntry {
             "{} {} ({} {}){}",
             self.date.format("%Y-%m-%d"),
             self.name,
-            self.currency,
+            self.currency_code,
             self.amount,
             tags_str
         )
@@ -215,7 +215,7 @@ pub struct LedgerEntryBuilder {
     id: Option<Uuid>,
     date: Option<DateTime<Utc>>,
     name: Option<String>,
-    currency: Option<String>,
+    currency_code: Option<String>,
     amount: Option<Decimal>,
     description: Option<String>,
     tags: HashSet<Tag>,
@@ -257,8 +257,8 @@ impl LedgerEntryBuilder {
     /// Sets the currency of the transaction.
     ///
     /// This field is required.
-    pub fn currency(mut self, currency: String) -> Self {
-        self.currency = Some(currency);
+    pub fn currency(mut self, currency_code: String) -> Self {
+        self.currency_code = Some(currency_code);
         self
     }
 
@@ -329,8 +329,8 @@ impl LedgerEntryBuilder {
             return Err(BeansError::validation("Entry name cannot be empty"));
         }
 
-        let currency = self
-            .currency
+        let currency_code = self
+            .currency_code
             .ok_or_else(|| BeansError::validation("Entry currency is required"))?;
 
         let amount = self
@@ -350,7 +350,7 @@ impl LedgerEntryBuilder {
             id: self.id.unwrap_or_else(Uuid::new_v4),
             date: self.date.unwrap_or_else(Utc::now),
             name,
-            currency,
+            currency_code,
             amount,
             description: self.description,
             tags: self.tags,
@@ -368,7 +368,7 @@ impl LedgerEntryBuilder {
             id: Some(entry.id),
             date: Some(entry.date),
             name: Some(entry.name.clone()),
-            currency: Some(entry.currency.clone()),
+            currency_code: Some(entry.currency_code.clone()),
             amount: Some(entry.amount),
             description: entry.description.clone(),
             tags: entry.tags.clone(),

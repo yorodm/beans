@@ -24,6 +24,10 @@ impl<'a> Currency<'a> {
     pub fn code(&self) -> &'a str {
         self.0.currency().iso_alpha_code
     }
+
+    pub fn amount(&self) -> &Decimal {
+        self.0.amount()
+    }
 }
 
 impl<'a> Display for Currency<'a> {

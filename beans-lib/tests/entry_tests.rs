@@ -46,7 +46,7 @@ fn test_entry_builder_basic() {
 
     assert_eq!(entry.name(), "Groceries");
     // Currency from rusty-money returns the amount as a string
-    assert!(entry.money().unwrap().to_string().contains("$42.50"));
+    assert!(entry.currency().unwrap().to_string().contains("$42.50"));
     assert_eq!(entry.amount(), dec!(42.50));
     assert_eq!(entry.entry_type(), EntryType::Expense);
     assert!(entry.description().is_none());
@@ -78,7 +78,7 @@ fn test_entry_builder_full() {
     assert_eq!(entry.date(), date);
     assert_eq!(entry.name(), "Weekly Groceries");
     // Currency from rusty-money returns the amount as a string
-    assert!(entry.money().unwrap().to_string().contains("$125.40"));
+    assert!(entry.currency().unwrap().to_string().contains("$125.40"));
     assert_eq!(entry.amount(), dec!(125.40));
     assert_eq!(entry.description(), Some("Weekly grocery shopping"));
     assert_eq!(entry.tags().len(), 2);
@@ -176,7 +176,7 @@ fn test_entry_builder_from_entry() {
     // Check that unmodified values stayed the same
     assert_eq!(modified.id(), original.id());
     // Currency from rusty-money returns the amount as a string
-    assert!(modified.money().unwrap().to_string().contains("$50.00"));
+    assert!(modified.currency().unwrap().to_string().contains("$50.00"));
     assert_eq!(modified.entry_type(), EntryType::Expense);
     assert!(modified.tags().contains(&tag));
 }

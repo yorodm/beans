@@ -2,10 +2,9 @@
 
 mod support;
 
-use beans_lib::currency::CurrencyConverter;
 use beans_lib::error::BeansResult;
 use beans_lib::ledger::LedgerManager;
-use beans_lib::models::{Currency, EntryType, LedgerEntryBuilder, Tag};
+use beans_lib::models::{EntryType, LedgerEntryBuilder, Tag};
 use beans_lib::reporting::{ExportFormat, ReportGenerator, TimePeriod};
 use chrono::{Duration, TimeZone, Utc};
 use rust_decimal_macros::dec;
