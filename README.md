@@ -31,7 +31,7 @@ beans/
 │   │   ├── currency/   # ✅ Currency conversion
 │   │   └── reporting/  # 🚧 Analytics & reporting
 │   ├── tests/          # ✅ Integration tests for models, ledger, and currency
-│   └── examples/       # ✅ Usage examples for currency
+│   └── examples/       # ✅ Comprehensive examples for all features
 └── beans/              # Binary crate (UI application)
     └── src/
         └── main.rs     # ✅ Placeholder (UI in Phase 2)
@@ -188,7 +188,7 @@ While AI provided significant assistance, all code has been reviewed and validat
 5. ✅ Implement currency conversion with external API
 6. 🚧 Implement reporting and analytics
 7. 🚧 Add comprehensive tests (unit + integration)
-8. 🚧 Write documentation and examples
+8. ✅ Write documentation and examples
 9. [ ] Review and refine Phase 1
 10. [ ] Implement UI with Ribir 0.2.x
 11. [ ] Add graph visualization
