@@ -26,11 +26,11 @@ beans/
 │   │   │   ├── currency.rs  # ✅ Currency type with rusty-money
 │   │   │   ├── entry.rs     # ✅ LedgerEntry with builder
 │   │   │   └── tag.rs       # ✅ Tag with validation
-│   │   ├── database/   # 🚧 SQLite persistence
-│   │   ├── ledger/     # 🚧 Ledger manager
-│   │   ├── currency/   # 🚧 Currency conversion
+│   │   ├── database/   # ✅ SQLite persistence
+│   │   ├── ledger/     # ✅ Ledger manager
+│   │   ├── currency/   # ✅ Currency conversion
 │   │   └── reporting/  # 🚧 Analytics & reporting
-│   ├── tests/          # ✅ Integration tests for models
+│   ├── tests/          # ✅ Integration tests for models, ledger, and currency
 │   └── examples/       # ✅ Usage examples for currency
 └── beans/              # Binary crate (UI application)
     └── src/
@@ -49,13 +49,13 @@ beans/
 - ✅ Currency implementation with rusty-money (type-safe, with proper error handling)
 - ✅ Tag model with validation and normalization
 - ✅ LedgerEntry model with builder pattern
+- ✅ Database layer with SQLite
+- ✅ Ledger manager service with file handling
+- ✅ Currency conversion with external API integration
 
 **In Progress:**
-- 🚧 Database layer with SQLite  
-- 🚧 Ledger manager service
-- 🚧 Currency conversion with external API
 - 🚧 Reporting and analytics
-- 🚧 Unit and integration tests
+- 🚧 Additional unit and integration tests
 
 ### Phase 2: UI Implementation (Planned)
 
@@ -183,9 +183,9 @@ While AI provided significant assistance, all code has been reviewed and validat
 
 1. ✅ Initialize project structure
 2. ✅ Implement domain models (Currency, Tag, LedgerEntry)
-3. 🚧 Implement database layer with SQLite
-4. 🚧 Implement ledger manager service
-5. 🚧 Implement currency conversion with external API
+3. ✅ Implement database layer with SQLite
+4. ✅ Implement ledger manager service
+5. ✅ Implement currency conversion with external API
 6. 🚧 Implement reporting and analytics
 7. 🚧 Add comprehensive tests (unit + integration)
 8. 🚧 Write documentation and examples
@@ -196,4 +196,4 @@ While AI provided significant assistance, all code has been reviewed and validat
 
 ---
 
-**Status**: Phase 1 - Core Library Development (In Progress)
+**Status**: Phase 1 - Core Library Development (In Progress, ~70% Complete)
