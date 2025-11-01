@@ -195,6 +195,11 @@ impl<'a> ReportGenerator<'a> {
                 entry.amount()
             };
 
+            match entry.entry_type() {
+                EntryType::Income => total_income += amount,
+                EntryType::Expense => total_expenses += amount,
+            }
+
             // If entry has no tags, use "Untagged"
             let tags: Vec<String> = if entry.tags().is_empty() {
                 vec!["Untagged".to_string()]
@@ -206,11 +211,9 @@ impl<'a> ReportGenerator<'a> {
                 match entry.entry_type() {
                     EntryType::Income => {
                         *income_by_tag.entry(tag.clone()).or_insert(Decimal::ZERO) += amount;
-                        total_income += amount;
                     }
                     EntryType::Expense => {
                         *expenses_by_tag.entry(tag.clone()).or_insert(Decimal::ZERO) += amount;
-                        total_expenses += amount;
                     }
                 }
             }
