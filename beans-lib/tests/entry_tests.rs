@@ -1,6 +1,5 @@
 mod support;
 use beans_lib::models::{EntryType, LedgerEntryBuilder, Tag};
-use beans_lib::prelude::Currency;
 use chrono::{DateTime, Utc};
 use rust_decimal::prelude::dec;
 use std::str::FromStr;

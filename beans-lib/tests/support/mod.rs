@@ -3,17 +3,12 @@ pub fn usd<'a>() -> &'a str {
     rusty_money::iso::USD.iso_alpha_code
 }
 
-pub fn bgn<'a>() -> &'a str {
-    rusty_money::iso::BGN.iso_alpha_code
-}
-
 pub fn eur<'a>() -> &'a str {
     rusty_money::iso::EUR.iso_alpha_code
 }
 
 use beans_lib::database::{initialize_schema, SQLiteRepository};
 use beans_lib::error::BeansResult;
-use rusqlite::Connection;
 
 /// Creates an in-memory SQLite repository with initialized schema.
 pub fn create_test_repository() -> BeansResult<SQLiteRepository> {

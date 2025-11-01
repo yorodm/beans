@@ -4,14 +4,9 @@ use beans_lib::database::EntryFilter;
 use beans_lib::error::BeansResult;
 use beans_lib::ledger::LedgerManager;
 use beans_lib::models::{EntryType, LedgerEntry, LedgerEntryBuilder, Tag};
-use chrono::{Duration, Utc};
 use rust_decimal_macros::dec;
-use std::collections::HashSet;
-use std::fs;
-use std::path::Path;
 use support::*;
 use tempfile::tempdir;
-use uuid::Uuid;
 
 /// Creates a test entry with the given name and entry type.
 fn create_test_entry(name: &str, entry_type: EntryType) -> BeansResult<LedgerEntry> {
