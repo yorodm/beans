@@ -5,6 +5,6 @@ mod types;
 
 pub use generator::ReportGenerator;
 pub use types::{
-    ExportFormat, IncomeExpenseReport, PeriodSummary, TaggedReport, TimeSeriesData,
-    TimeSeriesPoint, TimePeriod,
+    ExportFormat, IncomeExpenseReport, PeriodSummary, TaggedReport, TimePeriod, TimeSeriesData,
+    TimeSeriesPoint,
 };

@@ -218,7 +218,7 @@ impl SQLiteRepository {
             .id(id)
             .date(date)
             .name(name)
-            .currency(currency.iso_alpha_code.to_owned())
+            .currency_code(currency.iso_alpha_code.to_owned())
             .amount(amount) // Add the amount to the builder
             .entry_type(entry_type);
 
@@ -521,10 +521,8 @@ impl Repository for SQLiteRepository {
         let conn = self.conn.lock().unwrap();
 
         // Build the filtered query but change SELECT to COUNT(*)
-        let (select, params) = self.build_filtered_query(filter);
+        let (_ , params) = self.build_filtered_query(filter);
 
-        // Get the WHERE clause from the select and build a COUNT query
-        let select_str = select.as_string();
 
         // We need to replace the SELECT clause with COUNT(*)
         // Since sql_query_builder doesn't have a direct way to do this,
@@ -532,19 +530,19 @@ impl Repository for SQLiteRepository {
         let mut count_select = sql::Select::new().select("COUNT(*)").from("entries");
 
         // Re-apply the same filters
-        if let Some(start_date) = filter.start_date {
+        if let Some(_) = filter.start_date {
             count_select = count_select.where_clause("date >= ?");
         }
 
-        if let Some(end_date) = filter.end_date {
+        if let Some(_) = filter.end_date {
             count_select = count_select.where_clause("date <= ?");
         }
 
-        if let Some(_entry_type) = &filter.entry_type {
+        if let Some(_) = &filter.entry_type {
             count_select = count_select.where_clause("entry_type = ?");
         }
 
-        if let Some(_currency) = &filter.currency {
+        if let Some(_) = &filter.currency {
             count_select = count_select.where_clause("currency = ?");
         }
 

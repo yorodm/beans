@@ -24,36 +24,36 @@ impl LedgerManager {
     /// The file must have a `.bean` extension.
     pub fn open<P: AsRef<Path>>(path: P) -> BeansResult<Self> {
         let path = path.as_ref();
-        
+
         // Validate file extension
         if let Some(ext) = path.extension() {
             if ext != "bean" {
-                return Err(BeansError::InvalidLedgerFormat(
-                    format!("Ledger file must have .bean extension, got: {:?}", ext)
-                ));
+                return Err(BeansError::InvalidLedgerFormat(format!(
+                    "Ledger file must have .bean extension, got: {:?}",
+                    ext
+                )));
             }
         } else {
             return Err(BeansError::InvalidLedgerFormat(
-                "Ledger file must have .bean extension".to_string()
+                "Ledger file must have .bean extension".to_string(),
             ));
         }
-        
+
         // Create parent directories if they don't exist
         if let Some(parent) = path.parent() {
             if !parent.exists() {
-                fs::create_dir_all(parent)
-                    .map_err(|e| BeansError::Io(e))?;
+                fs::create_dir_all(parent).map_err(|e| BeansError::Io(e))?;
             }
         }
-        
+
         // Open or create the SQLite database
         let repository = SQLiteRepository::open(path)?;
-        
+
         // Initialize the schema
         let conn = repository.conn.lock().unwrap();
         initialize_schema(&conn)?;
         drop(conn);
-        
+
         Ok(Self {
             repository: Box::new(repository),
         })
@@ -63,12 +63,12 @@ impl LedgerManager {
     pub fn in_memory() -> BeansResult<Self> {
         // Create an in-memory SQLite repository
         let repository = SQLiteRepository::in_memory()?;
-        
+
         // Initialize the schema
         let conn = repository.conn.lock().unwrap();
         initialize_schema(&conn)?;
         drop(conn);
-        
+
         Ok(Self {
             repository: Box::new(repository),
         })
@@ -80,10 +80,10 @@ impl LedgerManager {
     pub fn add_entry(&self, entry: &LedgerEntry) -> BeansResult<Uuid> {
         // Validate the entry (additional business logic validation can be added here)
         self.validate_entry(entry)?;
-        
+
         // Create the entry in the repository
         self.repository.create(entry)?;
-        
+
         Ok(entry.id())
     }
 
@@ -98,10 +98,10 @@ impl LedgerManager {
     pub fn update_entry(&self, entry: &LedgerEntry) -> BeansResult<()> {
         // Validate the entry
         self.validate_entry(entry)?;
-        
+
         // Update the entry with the current timestamp
         let updated_entry = entry.with_updated_at(Utc::now());
-        
+
         // Update the entry in the repository
         self.repository.update(&updated_entry)
     }
@@ -126,7 +126,7 @@ impl LedgerManager {
         let filter = EntryFilter::default();
         self.repository.list(&filter)
     }
-    
+
     /// Validates an entry according to business rules.
     ///
     /// This is separate from the model validation and can include additional
@@ -134,15 +134,15 @@ impl LedgerManager {
     fn validate_entry(&self, entry: &LedgerEntry) -> BeansResult<()> {
         // Basic validation is already done in the LedgerEntry::build method
         // Additional business logic validation can be added here
-        
+
         // For example, we could check if the entry date is in the future
         let now = Utc::now();
         if entry.date() > now {
             return Err(BeansError::validation(
-                "Entry date cannot be in the future".to_string()
+                "Entry date cannot be in the future".to_string(),
             ));
         }
-        
+
         Ok(())
     }
 }

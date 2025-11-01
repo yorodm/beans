@@ -20,7 +20,7 @@ async fn create_test_ledger_with_entries() -> BeansResult<LedgerManager> {
     // January entries
     let income1 = LedgerEntryBuilder::new()
         .name("Salary January")
-        .currency(support::usd().to_string())
+        .currency_code(support::usd().to_string())
         .amount(dec!(5000.00))
         .entry_type(EntryType::Income)
         .date(start)
@@ -30,7 +30,7 @@ async fn create_test_ledger_with_entries() -> BeansResult<LedgerManager> {
 
     let expense1 = LedgerEntryBuilder::new()
         .name("Rent January")
-        .currency(support::usd().to_string())
+        .currency_code(support::usd().to_string())
         .amount(dec!(1500.00))
         .entry_type(EntryType::Expense)
         .date(start + Duration::days(5))
@@ -40,7 +40,7 @@ async fn create_test_ledger_with_entries() -> BeansResult<LedgerManager> {
 
     let expense2 = LedgerEntryBuilder::new()
         .name("Groceries January")
-        .currency(support::usd().to_string())
+        .currency_code(support::usd().to_string())
         .amount(dec!(300.00))
         .entry_type(EntryType::Expense)
         .date(start + Duration::days(10))
@@ -51,7 +51,7 @@ async fn create_test_ledger_with_entries() -> BeansResult<LedgerManager> {
     // February entries
     let income2 = LedgerEntryBuilder::new()
         .name("Salary February")
-        .currency(support::usd().to_string())
+        .currency_code(support::usd().to_string())
         .amount(dec!(5000.00))
         .entry_type(EntryType::Income)
         .date(start + Duration::days(31))
@@ -61,7 +61,7 @@ async fn create_test_ledger_with_entries() -> BeansResult<LedgerManager> {
 
     let expense3 = LedgerEntryBuilder::new()
         .name("Rent February")
-        .currency(support::usd().to_string())
+        .currency_code(support::usd().to_string())
         .amount(dec!(1500.00))
         .entry_type(EntryType::Expense)
         .date(start + Duration::days(36))
@@ -71,7 +71,7 @@ async fn create_test_ledger_with_entries() -> BeansResult<LedgerManager> {
 
     let expense4 = LedgerEntryBuilder::new()
         .name("Utilities February")
-        .currency(support::usd().to_string())
+        .currency_code(support::usd().to_string())
         .amount(dec!(200.00))
         .entry_type(EntryType::Expense)
         .date(start + Duration::days(40))
@@ -82,7 +82,7 @@ async fn create_test_ledger_with_entries() -> BeansResult<LedgerManager> {
     // March entries
     let income3 = LedgerEntryBuilder::new()
         .name("Salary March")
-        .currency(support::usd().to_string())
+        .currency_code(support::usd().to_string())
         .amount(dec!(5000.00))
         .entry_type(EntryType::Income)
         .date(start + Duration::days(60))
@@ -92,7 +92,7 @@ async fn create_test_ledger_with_entries() -> BeansResult<LedgerManager> {
 
     let expense5 = LedgerEntryBuilder::new()
         .name("Rent March")
-        .currency(support::usd().to_string())
+        .currency_code(support::usd().to_string())
         .amount(dec!(1500.00))
         .entry_type(EntryType::Expense)
         .date(start + Duration::days(65))
@@ -144,7 +144,7 @@ async fn test_income_expense_report_daily() -> BeansResult<()> {
     // Add entries on specific days
     let income1 = LedgerEntryBuilder::new()
         .name("Income Day 1")
-        .currency(support::usd().to_string())
+        .currency_code(support::usd().to_string())
         .amount(dec!(100.00))
         .entry_type(EntryType::Income)
         .date(start)
@@ -153,7 +153,7 @@ async fn test_income_expense_report_daily() -> BeansResult<()> {
 
     let expense1 = LedgerEntryBuilder::new()
         .name("Expense Day 2")
-        .currency(support::usd().to_string())
+        .currency_code(support::usd().to_string())
         .amount(dec!(50.00))
         .entry_type(EntryType::Expense)
         .date(start + Duration::days(1))
@@ -189,7 +189,7 @@ async fn test_income_expense_report_weekly() -> BeansResult<()> {
     // Week 1
     let income1 = LedgerEntryBuilder::new()
         .name("Income Week 1")
-        .currency(support::usd().to_string())
+        .currency_code(support::usd().to_string())
         .amount(dec!(500.00))
         .entry_type(EntryType::Income)
         .date(start)
@@ -199,7 +199,7 @@ async fn test_income_expense_report_weekly() -> BeansResult<()> {
     // Week 2
     let income2 = LedgerEntryBuilder::new()
         .name("Income Week 2")
-        .currency(support::usd().to_string())
+        .currency_code(support::usd().to_string())
         .amount(dec!(600.00))
         .entry_type(EntryType::Income)
         .date(start + Duration::days(7))
@@ -229,7 +229,7 @@ async fn test_income_expense_report_yearly() -> BeansResult<()> {
     // 2023 entries
     let income1 = LedgerEntryBuilder::new()
         .name("Income 2023")
-        .currency(support::usd().to_string())
+        .currency_code(support::usd().to_string())
         .amount(dec!(50000.00))
         .entry_type(EntryType::Income)
         .date(start)
@@ -239,7 +239,7 @@ async fn test_income_expense_report_yearly() -> BeansResult<()> {
     // 2024 entries
     let income2 = LedgerEntryBuilder::new()
         .name("Income 2024")
-        .currency(support::usd().to_string())
+        .currency_code(support::usd().to_string())
         .amount(dec!(60000.00))
         .entry_type(EntryType::Income)
         .date(start + Duration::days(365))
@@ -308,10 +308,7 @@ async fn test_tagged_report() -> BeansResult<()> {
     let report = generator.tagged_report(start, end, None).await?;
 
     // Verify income by tag
-    assert_eq!(
-        *report.income_by_tag.get("salary").unwrap(),
-        dec!(15000.00)
-    );
+    assert_eq!(*report.income_by_tag.get("salary").unwrap(), dec!(15000.00));
 
     // Verify expenses by tag
     assert_eq!(*report.expenses_by_tag.get("rent").unwrap(), dec!(4500.00));
@@ -345,7 +342,7 @@ async fn test_tagged_report_with_untagged_entries() -> BeansResult<()> {
     // Entry without tags
     let income1 = LedgerEntryBuilder::new()
         .name("Untagged Income")
-        .currency(support::usd().to_string())
+        .currency_code(support::usd().to_string())
         .amount(dec!(1000.00))
         .entry_type(EntryType::Income)
         .date(start)
@@ -518,7 +515,7 @@ async fn test_timezone_handling() -> BeansResult<()> {
 
     let income = LedgerEntryBuilder::new()
         .name("Late Night Income")
-        .currency(support::usd().to_string())
+        .currency_code(support::usd().to_string())
         .amount(dec!(100.00))
         .entry_type(EntryType::Income)
         .date(date_utc)
@@ -549,7 +546,7 @@ async fn test_multiple_tags_per_entry() -> BeansResult<()> {
     // Entry with multiple tags
     let income = LedgerEntryBuilder::new()
         .name("Freelance Work")
-        .currency(support::usd().to_string())
+        .currency_code(support::usd().to_string())
         .amount(dec!(1000.00))
         .entry_type(EntryType::Income)
         .date(start)
