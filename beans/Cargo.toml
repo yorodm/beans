@@ -17,6 +17,12 @@ anyhow = { workspace = true }
 log = { workspace = true }
 env_logger = { workspace = true }
 
-# UI dependencies will be added in Phase 2
-# ribir = "0.2"
-
+# UI dependencies
+freya = "0.3"
+freya_native = "0.3"
+freya_components = "0.3"
+dioxus-hooks = "0.4"
+chrono = { workspace = true }
+uuid = { workspace = true }
+rust_decimal = { workspace = true }
+rfd = "0.12"  # Native file dialogs
