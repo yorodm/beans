@@ -42,7 +42,7 @@ async fn test_exchange_rate_from_api() -> BeansResult<()> {
 
     // Create a converter with the mock server URL
     let mut converter = CurrencyConverter::new(Duration::from_secs(24 * 60 * 60));
-    converter.set_base_url(mock_server.uri());
+    converter.set_base_url(format!("{}/v1",mock_server.uri()));
 
     // Create test currencies
     let usd = Currency::new(dec!(100.00), usd())?;
@@ -79,7 +79,7 @@ async fn test_cache_functionality() -> BeansResult<()> {
     }"#;
 
     // Mock the API endpoint - we'll count how many times it's called
-    let mock = Mock::given(method("GET"))
+    Mock::given(method("GET"))
         .and(path("/v1/currencies/usd.json"))
         .respond_with(ResponseTemplate::new(200).set_body_string(response_body))
         .expect(1) // We expect this to be called exactly once
@@ -88,7 +88,7 @@ async fn test_cache_functionality() -> BeansResult<()> {
 
     // Create a converter with the mock server URL
     let mut converter = CurrencyConverter::new(Duration::from_secs(24 * 60 * 60));
-    converter.set_base_url(mock_server.uri());
+    converter.set_base_url(format!("{}/v1",mock_server.uri()));
 
     // Create test currencies
     let usd = Currency::new(dec!(100.00), usd())?;
@@ -124,7 +124,7 @@ async fn test_api_error_handling() -> BeansResult<()> {
 
     // Create a converter with the mock server URL
     let mut converter = CurrencyConverter::new(Duration::from_secs(24 * 60 * 60));
-    converter.set_base_url(mock_server.uri());
+    converter.set_base_url(format!("{}/v1",mock_server.uri()));
 
     // Create test currencies
     let usd = Currency::new(dec!(100.00), usd())?;
@@ -134,7 +134,10 @@ async fn test_api_error_handling() -> BeansResult<()> {
     let result = converter.get_exchange_rate(&usd, &eur).await;
 
     // Verify we get an error
-    assert!(result.is_err());
+      assert!(result.is_err_and(|e| match e {
+        beans_lib::BeansError::Other(_) => true,
+        _ => false
+    }));
 
     Ok(())
 }
@@ -160,7 +163,7 @@ async fn test_invalid_json_handling() -> BeansResult<()> {
 
     // Create a converter with the mock server URL
     let mut converter = CurrencyConverter::new(Duration::from_secs(24 * 60 * 60));
-    converter.set_base_url(mock_server.uri());
+    converter.set_base_url(format!("{}/v1",mock_server.uri()));
 
     // Create test currencies
     let usd = Currency::new(dec!(100.00), usd())?;
@@ -168,9 +171,11 @@ async fn test_invalid_json_handling() -> BeansResult<()> {
 
     // Attempt to get the exchange rate
     let result = converter.get_exchange_rate(&usd, &eur).await;
-
     // Verify we get an error
-    assert!(result.is_err());
+    assert!(result.is_err_and(|e| match e {
+        beans_lib::BeansError::Json(_) => true,
+        _ => false
+    }));
 
     Ok(())
 }
@@ -198,7 +203,7 @@ async fn test_missing_rate_handling() -> BeansResult<()> {
 
     // Create a converter with the mock server URL
     let mut converter = CurrencyConverter::new(Duration::from_secs(24 * 60 * 60));
-    converter.set_base_url(mock_server.uri());
+    converter.set_base_url(format!("{}/v1",mock_server.uri()));
 
     // Create test currencies
     let usd = Currency::new(dec!(100.00), usd())?;
@@ -245,8 +250,8 @@ async fn test_fallback_url() -> BeansResult<()> {
 
     // Create a converter with both URLs
     let mut converter = CurrencyConverter::new(Duration::from_secs(24 * 60 * 60));
-    converter.set_base_url(primary_server.uri());
-    converter.set_fallback_url(fallback_server.uri());
+    converter.set_base_url(format!("{}/v1",primary_server.uri()));
+    converter.set_base_url(format!("{}/v1",fallback_server.uri()));
 
     // Create test currencies
     let usd = Currency::new(dec!(100.00), usd())?;
