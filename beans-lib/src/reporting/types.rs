@@ -3,6 +3,7 @@
 use chrono::{DateTime, Utc};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 /// Time period granularity for reports.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -57,3 +58,24 @@ pub struct IncomeExpenseReport {
     pub summary: PeriodSummary,
 }
 
+/// Report grouped by tags.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TaggedReport {
+    /// Income by tag.
+    pub income_by_tag: HashMap<String, Decimal>,
+    /// Expenses by tag.
+    pub expenses_by_tag: HashMap<String, Decimal>,
+    /// Net by tag.
+    pub net_by_tag: HashMap<String, Decimal>,
+    /// Overall summary.
+    pub summary: PeriodSummary,
+}
+
+/// Export format for reports.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ExportFormat {
+    /// CSV format.
+    Csv,
+    /// JSON format.
+    Json,
+}
