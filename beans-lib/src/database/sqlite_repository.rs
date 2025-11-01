@@ -6,7 +6,6 @@ use crate::models::{EntryType, LedgerEntry, LedgerEntryBuilder, Tag};
 use chrono::{DateTime, Utc};
 use rusqlite::{params, types::Type, Connection, Transaction};
 use rust_decimal::Decimal;
-use sql_query_builder as sql;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 use uuid::Uuid;
@@ -15,7 +14,7 @@ use uuid::Uuid;
 #[derive(Debug)]
 pub struct SQLiteRepository {
     /// Connection to the SQLite database.
-    pub conn: Arc<Mutex<Connection>>,
+    pub(crate) conn: Arc<Mutex<Connection>>,
 }
 
 impl SQLiteRepository {
@@ -32,11 +31,7 @@ impl SQLiteRepository {
             .map_err(|e| BeansError::database(format!("Failed to open database: {}", e)))?;
 
         // Enable foreign keys
-        let pragma_query = sql::Pragma::new()
-            .pragma("foreign_keys = ON")
-            .as_string();
-            
-        conn.execute(&pragma_query, [])
+        conn.execute("PRAGMA foreign_keys = ON", [])
             .map_err(|e| BeansError::database(format!("Failed to enable foreign keys: {}", e)))?;
 
         Ok(Self::new(conn))
@@ -49,11 +44,7 @@ impl SQLiteRepository {
         })?;
 
         // Enable foreign keys
-        let pragma_query = sql::Pragma::new()
-            .pragma("foreign_keys = ON")
-            .as_string();
-            
-        conn.execute(&pragma_query, [])
+        conn.execute("PRAGMA foreign_keys = ON", [])
             .map_err(|e| BeansError::database(format!("Failed to enable foreign keys: {}", e)))?;
 
         Ok(Self::new(conn))
@@ -67,14 +58,8 @@ impl SQLiteRepository {
     /// Gets a tag ID by name, creating it if it doesn't exist.
     fn get_or_create_tag_id(&self, tx: &Transaction, tag_name: &str) -> BeansResult<i64> {
         // Try to get the tag ID
-        let select_query = sql::Select::new()
-            .select("id")
-            .from("tags")
-            .where_clause("name = ?")
-            .as_string();
-
         let mut stmt = tx
-            .prepare(&select_query)
+            .prepare("SELECT id FROM tags WHERE name = ?")
             .map_err(|e| BeansError::database(format!("Failed to prepare tag query: {}", e)))?;
 
         let tag_id: Result<i64, rusqlite::Error> =
@@ -84,12 +69,7 @@ impl SQLiteRepository {
             Ok(id) => Ok(id),
             Err(rusqlite::Error::QueryReturnedNoRows) => {
                 // Tag doesn't exist, create it
-                let insert_query = sql::Insert::new()
-                    .insert_into("tags (name)")
-                    .values("(?)")
-                    .as_string();
-
-                tx.execute(&insert_query, params![tag_name])
+                tx.execute("INSERT INTO tags (name) VALUES (?)", params![tag_name])
                     .map_err(|e| BeansError::database(format!("Failed to insert tag: {}", e)))?;
 
                 Ok(tx.last_insert_rowid())
@@ -101,25 +81,21 @@ impl SQLiteRepository {
     /// Saves the tags for an entry.
     fn save_tags(&self, tx: &Transaction, entry_id: &Uuid, tags: &[Tag]) -> BeansResult<()> {
         // Delete existing tags for this entry
-        let delete_query = sql::Delete::new()
-            .delete_from("entry_tags")
-            .where_clause("entry_id = ?")
-            .as_string();
-
-        tx.execute(&delete_query, params![entry_id.to_string()])
-            .map_err(|e| BeansError::database(format!("Failed to delete existing tags: {}", e)))?;
+        tx.execute(
+            "DELETE FROM entry_tags WHERE entry_id = ?",
+            params![entry_id.to_string()],
+        )
+        .map_err(|e| BeansError::database(format!("Failed to delete existing tags: {}", e)))?;
 
         // Insert new tags
         for tag in tags {
             let tag_id = self.get_or_create_tag_id(tx, tag.name())?;
 
-            let insert_query = sql::Insert::new()
-                .insert_into("entry_tags (entry_id, tag_id)")
-                .values("(?, ?)")
-                .as_string();
-
-            tx.execute(&insert_query, params![entry_id.to_string(), tag_id])
-                .map_err(|e| BeansError::database(format!("Failed to insert entry tag: {}", e)))?;
+            tx.execute(
+                "INSERT INTO entry_tags (entry_id, tag_id) VALUES (?, ?)",
+                params![entry_id.to_string(), tag_id],
+            )
+            .map_err(|e| BeansError::database(format!("Failed to insert entry tag: {}", e)))?;
         }
 
         Ok(())
@@ -127,16 +103,13 @@ impl SQLiteRepository {
 
     /// Loads the tags for an entry.
     fn load_tags(&self, tx: &Transaction, entry_id: &Uuid) -> BeansResult<Vec<Tag>> {
-        let select_query = sql::Select::new()
-            .select("t.name")
-            .from("tags t")
-            .inner_join("entry_tags et ON t.id = et.tag_id")
-            .where_clause("et.entry_id = ?")
-            .order_by("t.name")
-            .as_string();
-
         let mut stmt = tx
-            .prepare(&select_query)
+            .prepare(
+                "SELECT t.name FROM tags t
+             JOIN entry_tags et ON t.id = et.tag_id
+             WHERE et.entry_id = ?
+             ORDER BY t.name",
+            )
             .map_err(|e| BeansError::database(format!("Failed to prepare tags query: {}", e)))?;
 
         let tag_iter = stmt
@@ -248,43 +221,35 @@ impl SQLiteRepository {
         }
     }
 
-    /// Builds a SELECT query with filters applied.
-    fn build_filtered_query(
-        &self,
-        filter: &EntryFilter,
-    ) -> (sql::Select, Vec<Box<dyn rusqlite::ToSql>>) {
-        let mut select = sql::Select::new()
-            .select(
-                "id, date, name, currency, amount, description, entry_type, created_at, updated_at",
-            )
-            .from("entries");
-
+    /// Builds a WHERE clause and parameters for the given filter.
+    fn build_filter_clause(&self, filter: &EntryFilter) -> (String, Vec<Box<dyn rusqlite::ToSql>>) {
+        let mut conditions = Vec::new();
         let mut params: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
 
         if let Some(start_date) = filter.start_date {
-            select = select.where_clause("date >= ?");
+            conditions.push("date >= ?".to_string());
             params.push(Box::new(start_date.to_rfc3339()));
         }
 
         if let Some(end_date) = filter.end_date {
-            select = select.where_clause("date <= ?");
+            conditions.push("date <= ?".to_string());
             params.push(Box::new(end_date.to_rfc3339()));
         }
 
         if let Some(entry_type) = &filter.entry_type {
-            select = select.where_clause("entry_type = ?");
+            conditions.push("entry_type = ?".to_string());
             params.push(Box::new(format!("{:?}", entry_type)));
         }
 
         if let Some(currency) = &filter.currency {
-            select = select.where_clause("currency = ?");
+            conditions.push("currency = ?".to_string());
             params.push(Box::new(currency.clone()));
         }
 
         // Handle tags filter if there are any tags
         if !filter.tags.is_empty() {
             let placeholders = vec!["?"; filter.tags.len()].join(", ");
-            let tag_subquery = format!(
+            let tag_condition = format!(
                 "id IN (
                     SELECT entry_id FROM entry_tags
                     JOIN tags ON entry_tags.tag_id = tags.id
@@ -295,7 +260,7 @@ impl SQLiteRepository {
                 placeholders
             );
 
-            select = select.where_clause(&tag_subquery);
+            conditions.push(tag_condition);
 
             for tag in &filter.tags {
                 params.push(Box::new(tag.clone()));
@@ -305,7 +270,13 @@ impl SQLiteRepository {
             params.push(Box::new(filter.tags.len() as i64));
         }
 
-        (select, params)
+        let where_clause = if conditions.is_empty() {
+            String::new()
+        } else {
+            format!("WHERE {}", conditions.join(" AND "))
+        };
+
+        (where_clause, params)
     }
 }
 
@@ -317,13 +288,9 @@ impl Repository for SQLiteRepository {
             .map_err(|e| BeansError::database(format!("Failed to start transaction: {}", e)))?;
 
         // Insert the entry
-        let insert_query = sql::Insert::new()
-            .insert_into("entries (id, date, name, currency, amount, description, entry_type, created_at, updated_at)")
-            .values("(?, ?, ?, ?, ?, ?, ?, ?, ?)")
-            .as_string();
-
         tx.execute(
-            &insert_query,
+            "INSERT INTO entries (id, date, name, currency, amount, description, entry_type, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
             params![
                 entry.id().to_string(),
                 entry.date().to_rfc3339(),
@@ -335,8 +302,7 @@ impl Repository for SQLiteRepository {
                 entry.created_at().to_rfc3339(),
                 entry.updated_at().to_rfc3339(),
             ],
-        )
-        .map_err(|e| BeansError::database(format!("Failed to insert entry: {}", e)))?;
+        ).map_err(|e| BeansError::database(format!("Failed to insert entry: {}", e)))?;
 
         // Convert HashSet<Tag> to Vec<Tag> for save_tags
         let tags_vec: Vec<Tag> = entry.tags().iter().cloned().collect();
@@ -357,17 +323,11 @@ impl Repository for SQLiteRepository {
             .transaction()
             .map_err(|e| BeansError::database(format!("Failed to start transaction: {}", e)))?;
 
-        let select_query = sql::Select::new()
-            .select(
-                "id, date, name, currency, amount, description, entry_type, created_at, updated_at",
-            )
-            .from("entries")
-            .where_clause("id = ?")
-            .as_string();
-
-        let mut stmt = tx
-            .prepare(&select_query)
-            .map_err(|e| BeansError::database(format!("Failed to prepare query: {}", e)))?;
+        let mut stmt = tx.prepare(
+            "SELECT id, date, name, currency, amount, description, entry_type, created_at, updated_at
+             FROM entries
+             WHERE id = ?"
+        ).map_err(|e| BeansError::database(format!("Failed to prepare query: {}", e)))?;
 
         let entry = stmt
             .query_row(params![id.to_string()], |row| self.row_to_entry(&tx, row))
@@ -388,14 +348,12 @@ impl Repository for SQLiteRepository {
             .map_err(|e| BeansError::database(format!("Failed to start transaction: {}", e)))?;
 
         // Check if the entry exists
-        let check_query = sql::Select::new()
-            .select("1")
-            .from("entries")
-            .where_clause("id = ?")
-            .as_string();
-
         let exists: bool = tx
-            .query_row(&check_query, params![entry.id().to_string()], |_| Ok(true))
+            .query_row(
+                "SELECT 1 FROM entries WHERE id = ?",
+                params![entry.id().to_string()],
+                |_| Ok(true),
+            )
             .unwrap_or(false);
 
         if !exists {
@@ -406,14 +364,10 @@ impl Repository for SQLiteRepository {
         }
 
         // Update the entry
-        let update_query = sql::Update::new()
-            .update("entries")
-            .set("date = ?, name = ?, currency = ?, amount = ?, description = ?, entry_type = ?, updated_at = ?")
-            .where_clause("id = ?")
-            .as_string();
-
         tx.execute(
-            &update_query,
+            "UPDATE entries
+             SET date = ?, name = ?, currency = ?, amount = ?, description = ?, entry_type = ?, updated_at = ?
+             WHERE id = ?",
             params![
                 entry.date().to_rfc3339(),
                 entry.name(),
@@ -424,8 +378,7 @@ impl Repository for SQLiteRepository {
                 entry.updated_at().to_rfc3339(),
                 entry.id().to_string(),
             ],
-        )
-        .map_err(|e| BeansError::database(format!("Failed to update entry: {}", e)))?;
+        ).map_err(|e| BeansError::database(format!("Failed to update entry: {}", e)))?;
 
         // Convert HashSet<Tag> to Vec<Tag> for save_tags
         let tags_vec: Vec<Tag> = entry.tags().iter().cloned().collect();
@@ -444,14 +397,12 @@ impl Repository for SQLiteRepository {
         let conn = self.conn.lock().unwrap();
 
         // Check if the entry exists
-        let check_query = sql::Select::new()
-            .select("1")
-            .from("entries")
-            .where_clause("id = ?")
-            .as_string();
-
         let exists: bool = conn
-            .query_row(&check_query, params![id.to_string()], |_| Ok(true))
+            .query_row(
+                "SELECT 1 FROM entries WHERE id = ?",
+                params![id.to_string()],
+                |_| Ok(true),
+            )
             .unwrap_or(false);
 
         if !exists {
@@ -462,12 +413,7 @@ impl Repository for SQLiteRepository {
         }
 
         // Delete the entry (cascade will delete entry_tags)
-        let delete_query = sql::Delete::new()
-            .delete_from("entries")
-            .where_clause("id = ?")
-            .as_string();
-
-        conn.execute(&delete_query, params![id.to_string()])
+        conn.execute("DELETE FROM entries WHERE id = ?", params![id.to_string()])
             .map_err(|e| BeansError::database(format!("Failed to delete entry: {}", e)))?;
 
         Ok(())
@@ -479,26 +425,30 @@ impl Repository for SQLiteRepository {
             .transaction()
             .map_err(|e| BeansError::database(format!("Failed to start transaction: {}", e)))?;
 
-        // Build the filtered query
-        let (mut select, params) = self.build_filtered_query(filter);
+        // Build the filter clause
+        let (where_clause, params) = self.build_filter_clause(filter);
 
-        // Add ORDER BY
-        select = select.order_by("date DESC");
+        // Build the query
+        let mut query = format!(
+            "SELECT id, date, name, currency, amount, description, entry_type, created_at, updated_at
+             FROM entries
+             {}
+             ORDER BY date DESC",
+            where_clause
+        );
 
         // Add limit and offset if specified
         // SQLite requires LIMIT when using OFFSET
         if let Some(limit) = filter.limit {
-            select = select.limit(&limit.to_string());
+            query.push_str(&format!(" LIMIT {}", limit));
         } else if filter.offset.is_some() {
             // If offset is specified but limit is not, use a large limit
-            select = select.limit("18446744073709551615"); // SQLite max LIMIT value (2^64-1)
+            query.push_str(" LIMIT 18446744073709551615"); // SQLite max LIMIT value (2^64-1)
         }
 
         if let Some(offset) = filter.offset {
-            select = select.offset(&offset.to_string());
+            query.push_str(&format!(" OFFSET {}", offset));
         }
-
-        let query = select.as_string();
 
         // Prepare and execute the query
         let mut stmt = tx
@@ -528,52 +478,11 @@ impl Repository for SQLiteRepository {
     fn count(&self, filter: &EntryFilter) -> BeansResult<usize> {
         let conn = self.conn.lock().unwrap();
 
-        // Build the filtered query but change SELECT to COUNT(*)
-        let (select, params) = self.build_filtered_query(filter);
+        // Build the filter clause
+        let (where_clause, params) = self.build_filter_clause(filter);
 
-        // Get the WHERE clause from the select and build a COUNT query
-        let select_str = select.as_string();
-
-        // We need to replace the SELECT clause with COUNT(*)
-        // Since sql_query_builder doesn't have a direct way to do this,
-        // we'll build a new query using the filter conditions
-        let mut count_select = sql::Select::new().select("COUNT(*)").from("entries");
-
-        // Re-apply the same filters
-        if let Some(start_date) = filter.start_date {
-            count_select = count_select.where_clause("date >= ?");
-        }
-
-        if let Some(end_date) = filter.end_date {
-            count_select = count_select.where_clause("date <= ?");
-        }
-
-        if let Some(_entry_type) = &filter.entry_type {
-            count_select = count_select.where_clause("entry_type = ?");
-        }
-
-        if let Some(_currency) = &filter.currency {
-            count_select = count_select.where_clause("currency = ?");
-        }
-
-        // Handle tags filter if there are any tags
-        if !filter.tags.is_empty() {
-            let placeholders = vec!["?"; filter.tags.len()].join(", ");
-            let tag_subquery = format!(
-                "id IN (
-                    SELECT entry_id FROM entry_tags
-                    JOIN tags ON entry_tags.tag_id = tags.id
-                    WHERE tags.name IN ({})
-                    GROUP BY entry_id
-                    HAVING COUNT(DISTINCT tags.name) = ?
-                )",
-                placeholders
-            );
-
-            count_select = count_select.where_clause(&tag_subquery);
-        }
-
-        let query = count_select.as_string();
+        // Build the query
+        let query = format!("SELECT COUNT(*) FROM entries {}", where_clause);
 
         // Prepare and execute the query
         let mut stmt = conn
