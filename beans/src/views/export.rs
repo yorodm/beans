@@ -16,11 +16,11 @@ use chrono::Utc;
 /// - Preview and save area
 #[component]
 pub fn ExportView() -> Element {
-    let mut app_state = use_context::<Signal<AppState>>();
+    let app_state = use_context::<Signal<AppState>>();
 
     // Local state
-    let mut format = use_signal(|| "json".to_string());
-    let mut export_path = use_signal(|| {
+    let format = use_signal(|| "json".to_string());
+    let export_path = use_signal(|| {
         app_state
             .read()
             .ledger_path
@@ -32,8 +32,8 @@ pub fn ExportView() -> Element {
             })
             .unwrap_or_default()
     });
-    let mut preview_content = use_signal(String::new);
-    let mut has_preview = use_signal(|| false);
+    let preview_content = use_signal(String::new);
+    let has_preview = use_signal(|| false);
 
     // Handle filter apply
     let on_filter_apply = move |_| {
@@ -43,7 +43,7 @@ pub fn ExportView() -> Element {
     };
 
     // Handle format change
-    let mut on_format_change = move |new_format: String| {
+    let on_format_change = move |new_format: String| {
         format.set(new_format.clone());
 
         // Update export path extension
@@ -58,81 +58,126 @@ pub fn ExportView() -> Element {
     };
 
     // Generate report
-    let mut generate_report = async move |_| {
-        let state = app_state.read();
-
-        if let Some(manager) = &state.ledger_manager {
-            // Create filter from current state
-            let mut filter = EntryFilter::new();
-
-            if let Some(start) = state.filter.date_range.start {
-                filter.start_date = Some(start);
-            }
-
-            if let Some(end) = state.filter.date_range.end {
-                filter.end_date = Some(end);
-            }
-
-            for tag in &state.filter.tags {
-                filter.tags.push(tag.clone());
-            }
-
-            // Create a ReportGenerator from the LedgerManager
-            let report_generator = ReportGenerator::new(manager);
-
-            // Get the start and end dates from the filter
-            let start_date = filter.start_date.unwrap_or_else(|| {
-                // Default to 30 days ago if no start date
-                Utc::now() - chrono::Duration::days(30)
-            });
-
-            let end_date = filter.end_date.unwrap_or_else(Utc::now);
-
-            // Get the tags from the filter
-            let tags = if filter.tags.is_empty() {
-                None
-            } else {
-                Some(filter.tags)
-            };
-
-            // Use tokio runtime to run the async report generation
-            let export_format = match format().as_str() {
-                "json" => ExportFormat::Json,
-                "csv" => ExportFormat::Csv,
-                _ => {
+    let generate_report = move |_| {
+        // Clone all signals for use in the async block
+        let app_state = app_state.clone();
+        let format = format.clone();
+        let preview_content = preview_content.clone();
+        let has_preview = has_preview.clone();
+        
+        // Spawn the async operation
+        spawn(async move {
+            // Extract all data we need while holding the read lock
+            let (entries, start_date, end_date, tags, export_format) = {
+                let state = app_state.read();
+                
+                if state.ledger_manager.is_none() {
                     drop(state);
-                    app_state.write().set_error("Unsupported export format".to_string());
+                    app_state.write().set_error("No ledger is open".to_string());
+                    return;
+                }
+                
+                let manager = state.ledger_manager.as_ref().unwrap();
+                
+                // Create filter from current state
+                let mut filter = EntryFilter::new();
+                
+                if let Some(start) = state.filter.date_range.start {
+                    filter.start_date = Some(start);
+                }
+                
+                if let Some(end) = state.filter.date_range.end {
+                    filter.end_date = Some(end);
+                }
+                
+                for tag in &state.filter.tags {
+                    filter.tags.push(tag.clone());
+                }
+                
+                // Get the start and end dates from the filter
+                let start_date = filter.start_date.unwrap_or_else(|| {
+                    // Default to 30 days ago if no start date
+                    Utc::now() - chrono::Duration::days(30)
+                });
+                
+                let end_date = filter.end_date.unwrap_or_else(Utc::now);
+                
+                // Get the tags from the filter
+                let tags = if filter.tags.is_empty() {
+                    None
+                } else {
+                    Some(filter.tags.clone())
+                };
+                
+                // Convert format string to ExportFormat
+                let export_format = match format().as_str() {
+                    "json" => ExportFormat::Json,
+                    "csv" => ExportFormat::Csv,
+                    _ => {
+                        drop(state);
+                        app_state.write().set_error("Unsupported export format".to_string());
+                        return;
+                    }
+                };
+                
+                // Get entries (we need to do this while we have the manager reference)
+                let entries = match manager.list_entries(&filter) {
+                    Ok(e) => e,
+                    Err(err) => {
+                        drop(state);
+                        app_state.write().set_error(format!("Failed to list entries: {}", err));
+                        return;
+                    }
+                };
+                
+                (entries, start_date, end_date, tags, export_format)
+            };
+            
+            // Now we can work with the extracted data without holding the read lock
+            
+            // Create a temporary LedgerManager for the ReportGenerator
+            let temp_manager = match LedgerManager::new_in_memory() {
+                Ok(mut m) => {
+                    // Add the cloned entries to the in-memory manager
+                    for entry in &entries {
+                        if let Err(e) = m.add_entry(entry.clone()) {
+                            app_state.write().set_error(format!("Failed to prepare report data: {}", e));
+                            return;
+                        }
+                    }
+                    m
+                },
+                Err(e) => {
+                    app_state.write().set_error(format!("Failed to create temporary ledger: {}", e));
                     return;
                 }
             };
-
-            // Use a blocking task to run the async report generation
-            let report = if let Ok(r) = report_generator.tagged_report(start_date, end_date, None).await {
-                r
-            } else {
-                drop(state);
-                app_state.write().set_error("Unsupported export format".to_string());
-                return;
+            
+            // Create a ReportGenerator from the temporary LedgerManager
+            let report_generator = ReportGenerator::new(&temp_manager);
+            
+            // Generate the report
+            let report = match report_generator.tagged_report(start_date, end_date, tags).await {
+                Ok(r) => r,
+                Err(e) => {
+                    app_state.write().set_error(format!("Failed to generate report: {}", e));
+                    return;
+                }
             };
-            let report_result = report_generator.export_tagged_report(&report, export_format);
-
-            match report_result {
+            
+            // Export the report
+            match report_generator.export_tagged_report(&report, export_format) {
                 Ok(content) => {
                     preview_content.set(content);
                     has_preview.set(true);
-                    drop(state);
                     app_state.write().set_success("Report generated successfully".to_string());
                 }
                 Err(e) => {
-                    drop(state);
-                    app_state.write().set_error(format!("Failed to generate report: {}", e));
+                    app_state.write().set_error(format!("Failed to export report: {}", e));
                     has_preview.set(false);
                 }
             }
-        } else {
-            drop(state);
-            app_state.write().set_error("No ledger is open".to_string());
-        }
+        });
     };
 
     // Save to file
@@ -269,9 +314,7 @@ pub fn ExportView() -> Element {
 
                         button {
                             class: "button-primary",
-                            onclick: move |_| {
-                                spawn(generate_report(()));
-                            },
+                            onclick: generate_report,
                             "Generate Report"
                         }
                     }
@@ -333,3 +376,4 @@ pub fn ExportView() -> Element {
         }
     }
 }
+
