@@ -1,23 +1,14 @@
 //! Entry form component for adding and editing ledger entries
 
 use beans_lib::prelude::*;
-use chrono::TimeZone;
-use dioxus::prelude::*;
+use crate::components::date_picker::DatePicker;
+use crate::styles;
+use chrono::{TimeZone, Utc};
+use freya::prelude::*;
 use rust_decimal::Decimal;
 use std::str::FromStr;
 
-use crate::components::date_picker::DatePicker;
-
 /// EntryForm component for adding and editing ledger entries
-///
-/// This component provides a form for creating or editing ledger entries with:
-/// - Date picker
-/// - Name input (required)
-/// - Type selector (Income/Expense radio buttons)
-/// - Amount input with validation
-/// - Currency code input (3-letter, auto-uppercase)
-/// - Description textarea
-/// - Tag management (add/remove tags)
 #[component]
 pub fn EntryForm(
     entry: Option<LedgerEntry>,
@@ -31,7 +22,7 @@ pub fn EntryForm(
             .map(|e| e.date().format("%Y-%m-%d").to_string())
             .unwrap_or_else(|| Utc::now().format("%Y-%m-%d").to_string())
     });
-    let have_entry = entry.is_some();
+    
     let mut name = use_signal(|| entry.as_ref().map(|e| e.name().to_string()).unwrap_or_default());
 
     let mut entry_type = use_signal(|| {
@@ -83,19 +74,11 @@ pub fn EntryForm(
     let add_tag = move |_| {
         let tag_name = tag_input().trim().to_string();
         if !tag_name.is_empty() {
-            // Validate tag format (only letters, numbers, hyphens, underscores)
             if !tag_name.chars().all(|c| c.is_alphanumeric() || c == '-' || c == '_') {
                 error_message.set("Tags can only contain letters, numbers, hyphens, and underscores".to_string());
                 return;
             }
 
-            // Check for spaces
-            if tag_name.contains(' ') {
-                error_message.set("Tags cannot contain spaces".to_string());
-                return;
-            }
-
-            // Add tag if it doesn't already exist
             let normalized = tag_name.to_lowercase();
             if !tags().iter().any(|t| t.to_lowercase() == normalized) {
                 let mut new_tags = tags();
@@ -129,11 +112,6 @@ pub fn EntryForm(
 
         if amount().trim().is_empty() {
             error_message.set("Amount is required".to_string());
-            return;
-        }
-
-        if currency_code().trim().is_empty() {
-            error_message.set("Currency code is required".to_string());
             return;
         }
 
@@ -196,208 +174,233 @@ pub fn EntryForm(
 
         // Build the entry
         match builder.build() {
-            Ok(entry) => {
-                on_save.call(entry);
-            }
-            Err(e) => {
-                error_message.set(format!("Error: {}", e));
-            }
+            Ok(entry) => on_save.call(entry),
+            Err(e) => error_message.set(format!("Failed to build entry: {}", e)),
         }
     };
 
+    let current_tags = tags();
+
     rsx! {
-        div {
-            class: "entry-form",
+        ScrollView {
+            width: "100%",
+            height: "fill",
+            show_scrollbar: true,
 
-            // Error message
-            {
+            rect {
+                width: "100%",
+                padding: "{styles::spacing::LARGE}",
+                direction: "vertical",
+                spacing: "{styles::spacing::LARGE}",
+
+                // Error message
                 if !error_message().is_empty() {
-                    rsx! {
-                        div {
-                            class: "error-message",
-                            "{error_message}"
-                        }
-                    }
-                } else {
-                    rsx!{}
-                }
-            }
-
-            // Form fields
-            div {
-                class: "form-grid",
-
-                // Date
-                div {
-                    class: "form-field",
-                    DatePicker {
-                        label: "Date".to_string(),
-                        value: date(),
-                        on_change: move |new_date| date.set(new_date)
-                    }
-                }
-
-                // Name
-                div {
-                    class: "form-field",
-                    label {
-                        class: "form-label",
-                        "Name *"
-                    }
-                    input {
-                        class: "form-input",
-                        r#type: "text",
-                        value: "{name}",
-                        placeholder: "Enter entry name",
-                        oninput: move |evt| name.set(evt.value().clone())
-                    }
-                }
-
-                // Entry Type
-                div {
-                    class: "form-field",
-                    label {
-                        class: "form-label",
-                        "Type *"
-                    }
-                    div {
-                        class: "radio-group",
+                    rect {
+                        width: "100%",
+                        padding: "{styles::spacing::MEDIUM}",
+                        background: "{styles::colors::ERROR}",
+                        corner_radius: "{styles::radius::SMALL}",
 
                         label {
-                            class: "radio-label",
-                            input {
-                                r#type: "radio",
-                                name: "entry-type",
-                                checked: entry_type() == EntryType::Income,
-                                oninput: move |_| entry_type.set(EntryType::Income)
-                            }
-                            "Income"
-                        }
-
-                        label {
-                            class: "radio-label",
-                            input {
-                                r#type: "radio",
-                                name: "entry-type",
-                                checked: entry_type() == EntryType::Expense,
-                                oninput: move |_| entry_type.set(EntryType::Expense)
-                            }
-                            "Expense"
+                            color: "white",
+                            font_size: "{styles::fonts::NORMAL}",
+                            "{error_message()}"
                         }
                     }
                 }
 
-                // Amount
-                div {
-                    class: "form-field",
+                // Date picker
+                DatePicker {
+                    label: "Date".to_string(),
+                    value: date().clone(),
+                    on_change: move |new_date| date.set(new_date)
+                }
+
+                // Name input
+                rect {
+                    direction: "vertical",
+                    spacing: "{styles::spacing::SMALL}",
+                    width: "100%",
+
                     label {
-                        class: "form-label",
-                        "Amount *"
+                        font_size: "{styles::fonts::NORMAL}",
+                        color: "{styles::colors::TEXT_PRIMARY}",
+                        "Name (required):"
                     }
-                    input {
-                        class: "form-input",
-                        r#type: "number",
-                        value: "{amount}",
+                    Input {
+                        value: name().clone(),
+                        placeholder: "Entry name",
+                        onchange: move |e| name.set(e),
+                    }
+                }
+
+                // Entry type selector
+                rect {
+                    direction: "vertical",
+                    spacing: "{styles::spacing::SMALL}",
+                    width: "100%",
+
+                    label {
+                        font_size: "{styles::fonts::NORMAL}",
+                        color: "{styles::colors::TEXT_PRIMARY}",
+                        "Type:"
+                    }
+
+                    rect {
+                        direction: "horizontal",
+                        spacing: "{styles::spacing::MEDIUM}",
+
+                        Button {
+                            onclick: move |_| entry_type.set(EntryType::Income),
+                            label {
+                                color: if entry_type() == EntryType::Income { "white" } else { "{styles::colors::TEXT_PRIMARY}" },
+                                "Income"
+                            }
+                        }
+
+                        Button {
+                            onclick: move |_| entry_type.set(EntryType::Expense),
+                            label {
+                                color: if entry_type() == EntryType::Expense { "white" } else { "{styles::colors::TEXT_PRIMARY}" },
+                                "Expense"
+                            }
+                        }
+                    }
+                }
+
+                // Amount input
+                rect {
+                    direction: "vertical",
+                    spacing: "{styles::spacing::SMALL}",
+                    width: "100%",
+
+                    label {
+                        font_size: "{styles::fonts::NORMAL}",
+                        color: "{styles::colors::TEXT_PRIMARY}",
+                        "Amount (required):"
+                    }
+                    Input {
+                        value: amount().clone(),
                         placeholder: "0.00",
-                        step: "0.01",
-                        min: "0.01",
-                        oninput: move |evt| amount.set(evt.value().clone())
+                        onchange: move |e| amount.set(e),
                     }
                 }
 
-                // Currency
-                div {
-                    class: "form-field",
+                // Currency code input
+                rect {
+                    direction: "vertical",
+                    spacing: "{styles::spacing::SMALL}",
+                    width: "100%",
+
                     label {
-                        class: "form-label",
-                        "Currency Code *"
+                        font_size: "{styles::fonts::NORMAL}",
+                        color: "{styles::colors::TEXT_PRIMARY}",
+                        "Currency Code:"
                     }
-                    input {
-                        class: "form-input",
-                        r#type: "text",
-                        value: "{currency_code}",
+                    Input {
+                        value: currency_code().clone(),
                         placeholder: "USD",
-                        maxlength: "3",
-                        oninput: move |evt| {
-                            let value = evt.value().clone().to_uppercase();
-                            currency_code.set(value);
-                        }
+                        onchange: move |e| currency_code.set(e.to_uppercase()),
                     }
                 }
 
-                // Description
-                div {
-                    class: "form-field full-width",
+                // Description input
+                rect {
+                    direction: "vertical",
+                    spacing: "{styles::spacing::SMALL}",
+                    width: "100%",
+
                     label {
-                        class: "form-label",
-                        "Description"
+                        font_size: "{styles::fonts::NORMAL}",
+                        color: "{styles::colors::TEXT_PRIMARY}",
+                        "Description:"
                     }
-                    textarea {
-                        class: "form-textarea",
-                        value: "{description}",
+                    Input {
+                        value: description().clone(),
                         placeholder: "Optional description",
-                        oninput: move |evt| description.set(evt.value().clone())
+                        onchange: move |e| description.set(e),
                     }
                 }
 
-                // Tags
-                div {
-                    class: "form-field full-width",
+                // Tags management
+                rect {
+                    direction: "vertical",
+                    spacing: "{styles::spacing::SMALL}",
+                    width: "100%",
+
                     label {
-                        class: "form-label",
-                        "Tags"
+                        font_size: "{styles::fonts::NORMAL}",
+                        color: "{styles::colors::TEXT_PRIMARY}",
+                        "Tags:"
                     }
-                    div {
-                        class: "tag-input-container",
-                        input {
-                            class: "form-input",
-                            r#type: "text",
-                            value: "{tag_input}",
-                            placeholder: "Add a tag (no spaces, use hyphens)",
-                            oninput: move |evt| tag_input.set(evt.value().clone())
+
+                    rect {
+                        direction: "horizontal",
+                        spacing: "{styles::spacing::SMALL}",
+
+                        Input {
+                            value: tag_input().clone(),
+                            placeholder: "Enter tag name",
+                            onchange: move |e| tag_input.set(e),
                         }
-                        button {
-                            class: "button-secondary",
-                            onclick: add_tag,
-                            "Add"
+
+                        Button {
+                            onclick: move |_| add_tag(()),
+                            label { "Add Tag" }
                         }
                     }
 
                     // Display current tags
-                    div {
-                        class: "tag-list",
+                    if !current_tags.is_empty() {
+                        rect {
+                            direction: "horizontal",
+                            spacing: "{styles::spacing::SMALL}",
+                            padding: "{styles::spacing::SMALL}",
 
-                        for (idx, tag) in tags().iter().enumerate() {
-                            div {
-                                class: "tag-item",
-                                span { "{tag}" }
-                                button {
-                                    class: "tag-remove",
-                                    onclick: move |_| remove_tag(idx),
-                                    "×"
+                            for (idx, tag) in current_tags.iter().enumerate() {
+                                rect {
+                                    direction: "horizontal",
+                                    padding: "{styles::spacing::SMALL}",
+                                    background: "{styles::colors::INFO}",
+                                    corner_radius: "{styles::radius::SMALL}",
+                                    spacing: "{styles::spacing::TINY}",
+                                    cross_align: "center",
+
+                                    label {
+                                        color: "white",
+                                        font_size: "{styles::fonts::SMALL}",
+                                        "{tag}"
+                                    }
+
+                                    Button {
+                                        onclick: move |_| remove_tag(idx),
+                                        label { "×" }
+                                    }
                                 }
                             }
                         }
                     }
                 }
-            }
 
-            // Form actions
-            div {
-                class: "form-actions",
+                // Action buttons
+                rect {
+                    direction: "horizontal",
+                    spacing: "{styles::spacing::MEDIUM}",
+                    main_align: "center",
+                    padding: "{styles::spacing::LARGE} 0 0 0",
 
-                button {
-                    class: "button-secondary",
-                    onclick: move |_| on_cancel.call(()),
-                    "Cancel"
-                }
+                    Button {
+                        onclick: save,
+                        label { "Save Entry" }
+                    }
 
-                button {
-                    class: "button-primary",
-                    onclick: save,
-                    if have_entry { "Update" } else { "Save" }
+                    Button {
+                        onclick: move |_| on_cancel.call(()),
+                        label { "Cancel" }
+                    }
                 }
             }
         }
     }
 }
+

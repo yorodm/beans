@@ -1,8 +1,9 @@
 //! Filter panel component for date and tag filtering
 
 use crate::state::AppState;
-use chrono::{DateTime, NaiveDate, TimeZone, Utc};
-use dioxus::prelude::*;
+use crate::styles;
+use chrono::{NaiveDate, TimeZone, Utc};
+use freya::prelude::*;
 
 #[component]
 pub fn FilterPanel(on_apply: EventHandler<()>) -> Element {
@@ -95,77 +96,110 @@ pub fn FilterPanel(on_apply: EventHandler<()>) -> Element {
     let current_tags = app_state.read().filter.tags.clone();
 
     rsx! {
-        div {
-            class: "filter-panel",
+        rect {
+            width: "280",
+            padding: "{styles::spacing::LARGE}",
+            background: "white",
+            corner_radius: "{styles::radius::MEDIUM}",
+            shadow: "0 2 4 0 {styles::colors::SHADOW}",
+            direction: "vertical",
+            spacing: "{styles::spacing::LARGE}",
 
-            h3 { "Filter Entries" }
+            // Title
+            label {
+                font_size: "{styles::fonts::LARGE}",
+                font_weight: "bold",
+                color: "{styles::colors::TEXT_PRIMARY}",
+                "Filter Entries"
+            }
 
             // Date range filters
-            div {
-                class: "filter-section",
+            rect {
+                direction: "vertical",
+                spacing: "{styles::spacing::MEDIUM}",
 
-                div {
-                    class: "filter-row",
+                label {
+                    font_size: "{styles::fonts::NORMAL}",
+                    color: "{styles::colors::TEXT_PRIMARY}",
+                    "Start Date:"
+                }
+                Input {
+                    value: start_date.read().clone(),
+                    placeholder: "YYYY-MM-DD",
+                    onchange: move |e| start_date.set(e),
+                }
 
-                    div {
-                        class: "filter-field",
-                        label { "Start Date:" }
-                        input {
-                            r#type: "date",
-                            value: "{start_date}",
-                            oninput: move |evt| start_date.set(evt.value().clone())
-                        }
-                    }
-
-                    div {
-                        class: "filter-field",
-                        label { "End Date:" }
-                        input {
-                            r#type: "date",
-                            value: "{end_date}",
-                            oninput: move |evt| end_date.set(evt.value().clone())
-                        }
-                    }
+                label {
+                    font_size: "{styles::fonts::NORMAL}",
+                    color: "{styles::colors::TEXT_PRIMARY}",
+                    "End Date:"
+                }
+                Input {
+                    value: end_date.read().clone(),
+                    placeholder: "YYYY-MM-DD",
+                    onchange: move |e| end_date.set(e),
                 }
             }
 
             // Tag filters
-            div {
-                class: "filter-section",
+            rect {
+                direction: "vertical",
+                spacing: "{styles::spacing::MEDIUM}",
 
-                div {
-                    class: "filter-row",
-
-                    div {
-                        class: "filter-field",
-                        label { "Tags:" }
-                        input {
-                            r#type: "text",
-                            value: "{tag_input}",
-                            placeholder: "Enter tag name",
-                            oninput: move |evt| tag_input.set(evt.value().clone()),
-                        }
-                        button {
-                            onclick: move |evt| {
-                                add_tag(())
-                            },
-                            "Add Tag"
-                        }
+                label {
+                    font_size: "{styles::fonts::NORMAL}",
+                    color: "{styles::colors::TEXT_PRIMARY}",
+                    "Tags:"
+                }
+                
+                rect {
+                    direction: "horizontal",
+                    spacing: "{styles::spacing::SMALL}",
+                    
+                    Input {
+                        value: tag_input.read().clone(),
+                        placeholder: "Enter tag name",
+                        onchange: move |e| tag_input.set(e),
+                    }
+                    
+                    Button {
+                        onclick: move |_| add_tag(()),
+                        label { "Add" }
                     }
                 }
 
                 // Display current tags
                 if !current_tags.is_empty() {
-                    div {
-                        class: "tag-list",
-                        for tag in current_tags {
-                            div {
-                                class: "tag-item",
-                                span { "{tag}" }
-                                button {
-                                    class: "tag-remove",
-                                    onclick: move |_| remove_tag(tag.clone()),
-                                    "×"
+                    ScrollView {
+                        height: "120",
+                        width: "100%",
+                        show_scrollbar: true,
+                        
+                        rect {
+                            direction: "vertical",
+                            spacing: "{styles::spacing::SMALL}",
+                            
+                            for tag in current_tags {
+                                rect {
+                                    width: "100%",
+                                    height: "30",
+                                    direction: "horizontal",
+                                    main_align: "spaceBetween",
+                                    cross_align: "center",
+                                    padding: "{styles::spacing::SMALL}",
+                                    background: "{styles::colors::INFO}",
+                                    corner_radius: "{styles::radius::SMALL}",
+                                    
+                                    label {
+                                        color: "white",
+                                        font_size: "{styles::fonts::SMALL}",
+                                        "{tag}"
+                                    }
+                                    
+                                    Button {
+                                        onclick: move |_| remove_tag(tag.clone()),
+                                        label { "×" }
+                                    }
                                 }
                             }
                         }
@@ -174,21 +208,22 @@ pub fn FilterPanel(on_apply: EventHandler<()>) -> Element {
             }
 
             // Action buttons
-            div {
-                class: "filter-actions",
+            rect {
+                direction: "horizontal",
+                spacing: "{styles::spacing::SMALL}",
+                main_align: "center",
 
-                button {
-                    class: "button-primary",
+                Button {
                     onclick: apply_filter,
-                    "Apply Filter"
+                    label { "Apply Filter" }
                 }
 
-                button {
-                    class: "button-secondary",
+                Button {
                     onclick: clear_filter,
-                    "Clear Filter"
+                    label { "Clear Filter" }
                 }
             }
         }
     }
 }
+

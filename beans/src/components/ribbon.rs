@@ -1,7 +1,8 @@
 //! Ribbon toolbar component
 
 use crate::state::{AppState, View};
-use dioxus::prelude::*;
+use crate::styles;
+use freya::prelude::*;
 
 #[component]
 pub fn Ribbon() -> Element {
@@ -9,67 +10,76 @@ pub fn Ribbon() -> Element {
     let has_ledger = app_state.read().ledger_manager.is_some();
 
     rsx! {
-        div {
-            class: "ribbon",
+        rect {
+            width: "100%",
+            height: "60",
+            background: "{styles::colors::RIBBON_BG}",
+            padding: "{styles::spacing::MEDIUM}",
+            direction: "horizontal",
+            main_align: "start",
+            cross_align: "center",
+            spacing: "{styles::spacing::SMALL}",
+            shadow: "0 2 4 0 {styles::colors::SHADOW}",
 
-            button {
-                class: "ribbon-button",
+            Button {
                 onclick: move |_| {
                     app_state.write().set_view(View::LedgerSelection);
                 },
-                "📂 Open/Create Ledger"
+                label { "📂 Open/Create Ledger" }
             }
 
-            div { class: "ribbon-separator" }
+            rect {
+                width: "2",
+                height: "30",
+                background: "{styles::colors::BORDER}",
+                margin: "0 {styles::spacing::SMALL}",
+            }
 
-            button {
-                class: "ribbon-button",
-                disabled: !has_ledger,
+            Button {
+                enabled: has_ledger,
                 onclick: move |_| {
                     app_state.write().set_view(View::Overview);
                 },
-                "📊 Overview"
+                label { "📊 Overview" }
             }
 
-            button {
-                class: "ribbon-button",
-                disabled: !has_ledger,
+            Button {
+                enabled: has_ledger,
                 onclick: move |_| {
                     app_state.write().set_view(View::AddEntry);
                 },
-                "➕ Add Entry"
+                label { "➕ Add Entry" }
             }
 
-            button {
-                class: "ribbon-button",
-                disabled: !has_ledger,
+            Button {
+                enabled: has_ledger,
                 onclick: move |_| {
                     app_state.write().set_view(View::EditEntry);
                 },
-                "✏️ Edit Entry"
+                label { "✏️ Edit Entry" }
             }
 
-            button {
-                class: "ribbon-button",
-                disabled: !has_ledger,
+            Button {
+                enabled: has_ledger,
                 onclick: move |_| {
                     app_state.write().set_view(View::ExportLedger);
                 },
-                "💾 Export Ledger"
+                label { "💾 Export Ledger" }
             }
 
-            button {
-                class: "ribbon-button",
+            Button {
                 onclick: move |_| {
                     std::process::exit(0)
                 },
-                "❌ Exit"
+                label { "❌ Exit" }
             }
 
             // Show current ledger name if one is open
             if let Some(path) = &app_state.read().ledger_path {
-                div {
-                    class: "ledger-name",
+                label {
+                    color: "{styles::colors::TEXT_SECONDARY}",
+                    font_size: "{styles::fonts::NORMAL}",
+                    margin: "0 0 0 {styles::spacing::LARGE}",
                     "Current: {path.file_name().unwrap_or_default().to_string_lossy()}"
                 }
             }

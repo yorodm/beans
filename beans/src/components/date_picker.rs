@@ -1,26 +1,30 @@
 //! Date picker component
 
-use dioxus::prelude::*;
+use crate::styles;
+use freya::prelude::*;
 
 #[component]
 pub fn DatePicker(label: String, value: String, on_change: EventHandler<String>) -> Element {
     rsx! {
-        div {
-            class: "date-picker",
+        rect {
+            direction: "vertical",
+            spacing: "{styles::spacing::SMALL}",
+            width: "100%",
 
             label {
-                class: "date-picker-label",
+                font_size: "{styles::fonts::NORMAL}",
+                color: "{styles::colors::TEXT_PRIMARY}",
                 "{label}"
             }
 
-            input {
-                r#type: "date",
-                class: "date-picker-input",
-                value: "{value}",
-                oninput: move |evt| {
-                    on_change.call(evt.value().clone());
+            Input {
+                value: value.clone(),
+                placeholder: "YYYY-MM-DD",
+                onchange: move |new_value| {
+                    on_change.call(new_value);
                 }
             }
         }
     }
 }
+

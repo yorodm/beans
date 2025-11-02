@@ -1,22 +1,23 @@
-//! Beans - Ledger application with Dioxus UI
+//! Beans - Ledger application with Freya UI
 
 mod app;
 mod components;
 mod state;
+mod styles;
 mod views;
 
 fn main() {
     env_logger::init();
     log::info!("Starting Beans ledger application");
 
-    dioxus::LaunchBuilder::desktop()
-        .with_cfg(
-            dioxus::desktop::Config::default().with_menu(None).with_window(
-                dioxus::desktop::WindowBuilder::new()
-                    .with_title("Beans - Ledger Manager")
-                    .with_resizable(true)
-                    .with_inner_size(dioxus::desktop::tao::dpi::LogicalSize::new(1200.0, 800.0)),
-            ),
-        )
-        .launch(app::App);
+    freya::launch_cfg(
+        app::App,
+        freya::WindowConfig::builder()
+            .with_title("Beans - Ledger Manager")
+            .with_width(1200.0)
+            .with_height(800.0)
+            .with_decorations(true)
+            .with_transparency(false)
+            .build(),
+    );
 }

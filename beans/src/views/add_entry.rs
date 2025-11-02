@@ -2,8 +2,9 @@
 
 use crate::components::entry_form::EntryForm;
 use crate::state::{AppState, View};
+use crate::styles;
 use beans_lib::prelude::*;
-use dioxus::prelude::*;
+use freya::prelude::*;
 
 /// Add Entry View
 ///
@@ -47,22 +48,33 @@ pub fn AddEntryView() -> Element {
     };
 
     rsx! {
-        div {
-            class: "view add-entry-view",
+        rect {
+            width: "100%",
+            height: "fill",
+            padding: "{styles::spacing::LARGE}",
+            direction: "vertical",
+            spacing: "{styles::spacing::LARGE}",
 
-            h1 { "Add New Entry" }
+            label {
+                font_size: "{styles::fonts::TITLE}",
+                font_weight: "bold",
+                color: "{styles::colors::TEXT_PRIMARY}",
+                "Add New Entry"
+            }
 
             // Display error message if any
-            {
-                if let Some(error) = &app_state.read().error_message {
-                    rsx! {
-                        div {
-                            class: "error-message",
-                            "{error}"
-                        }
+            if let Some(error) = &app_state.read().error_message {
+                rect {
+                    width: "100%",
+                    padding: "{styles::spacing::MEDIUM}",
+                    background: "{styles::colors::ERROR}",
+                    corner_radius: "{styles::radius::SMALL}",
+
+                    label {
+                        color: "white",
+                        font_size: "{styles::fonts::NORMAL}",
+                        "{error}"
                     }
-                } else {
-                    rsx!{}
                 }
             }
 
@@ -75,3 +87,4 @@ pub fn AddEntryView() -> Element {
         }
     }
 }
+

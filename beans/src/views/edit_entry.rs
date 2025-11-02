@@ -3,19 +3,14 @@
 use crate::components::entry_form::EntryForm;
 use crate::components::filter_panel::FilterPanel;
 use crate::state::{AppState, View};
+use crate::styles;
 use beans_lib::prelude::*;
-use dioxus::prelude::*;
+use freya::prelude::*;
 
-/// Edit Entry View
-///
-/// This view provides a two-stage interface:
-/// 1. Selection stage: Filter and list entries, select one to edit
-/// 2. Edit stage: Use EntryForm to modify the selected entry
+/// Edit Entry View - Two-stage interface for selecting and editing entries
 #[component]
 pub fn EditEntryView() -> Element {
     let mut app_state = use_context::<Signal<AppState>>();
-
-    // Local state to track if we're in selection or edit mode
     let mut editing = use_signal(|| false);
 
     // Get the selected entry if any
@@ -34,10 +29,7 @@ pub fn EditEntryView() -> Element {
     }
 
     // Handle filter apply
-    let on_filter_apply = move |_| {
-        // Filtering is handled by the FilterPanel component
-        // We just need to refresh the view
-    };
+    let on_filter_apply = move |_| {};
 
     // Handle entry selection
     let mut select_entry = move |id: Uuid| {
@@ -51,19 +43,13 @@ pub fn EditEntryView() -> Element {
     let on_save = move |entry: LedgerEntry| {
         let mut state = app_state.write();
 
-        // Update the entry in the ledger
         if let Some(manager) = &state.ledger_manager {
             match manager.update_entry(&entry) {
                 Ok(_) => {
-                    // Set success message
                     state.set_success("Entry updated successfully".to_string());
-
-                    // Reload entries
                     if let Err(e) = state.load_entries() {
                         state.set_error(format!("Failed to reload entries: {}", e));
                     }
-
-                    // Clear selection and go back to selection mode
                     state.selected_entry = None;
                     drop(state);
                     editing.set(false);
@@ -81,19 +67,13 @@ pub fn EditEntryView() -> Element {
     let mut delete_entry = move |id: Uuid| {
         let mut state = app_state.write();
 
-        // Delete the entry from the ledger
         if let Some(manager) = &state.ledger_manager {
             match manager.delete_entry(id) {
                 Ok(_) => {
-                    // Set success message
                     state.set_success("Entry deleted successfully".to_string());
-
-                    // Reload entries
                     if let Err(e) = state.load_entries() {
                         state.set_error(format!("Failed to reload entries: {}", e));
                     }
-
-                    // Clear selection and go back to selection mode
                     state.selected_entry = None;
                     drop(state);
                     editing.set(false);
@@ -102,191 +82,136 @@ pub fn EditEntryView() -> Element {
                     state.set_error(format!("Failed to delete entry: {}", e));
                 }
             }
-        } else {
-            state.set_error("No ledger is open".to_string());
         }
     };
 
     // Handle cancel action
     let on_cancel = move |_| {
-        // Clear selection and go back to selection mode
         app_state.write().selected_entry = None;
         editing.set(false);
     };
 
-    // Handle back to overview
-    let back_to_overview = move |_| {
-        let mut state = app_state.write();
-        state.selected_entry = None;
-        state.set_view(View::Overview);
-    };
-    let entries = app_state.read().entries.clone().into_iter();
+    let entries = app_state.read().entries.clone();
 
     rsx! {
-        div {
-            class: "view edit-entry-view",
+        rect {
+            width: "100%",
+            height: "fill",
+            padding: "{styles::spacing::LARGE}",
+            direction: "vertical",
+            spacing: "{styles::spacing::LARGE}",
 
-            // Header
-            div {
-                class: "view-header",
-                h1 { if editing() { "Edit Entry" } else { "Select Entry to Edit" } }
+            label {
+                font_size: "{styles::fonts::TITLE}",
+                font_weight: "bold",
+                color: "{styles::colors::TEXT_PRIMARY}",
+                "Edit Entry"
+            }
 
-                button {
-                    class: "button-secondary back-button",
-                    onclick: back_to_overview,
-                    "Back to Overview"
+            // Messages
+            if let Some(success) = &app_state.read().success_message {
+                rect {
+                    width: "100%",
+                    padding: "{styles::spacing::MEDIUM}",
+                    background: "{styles::colors::SUCCESS}",
+                    corner_radius: "{styles::radius::SMALL}",
+                    label {
+                        color: "white",
+                        font_size: "{styles::fonts::NORMAL}",
+                        "{success}"
+                    }
                 }
             }
 
-            // Success/error messages
-            {
-                if let Some(success) = &app_state.read().success_message {
-                    rsx! {
-                        div {
-                            class: "success-message",
-                            "{success}"
-                        }
+            if let Some(error) = &app_state.read().error_message {
+                rect {
+                    width: "100%",
+                    padding: "{styles::spacing::MEDIUM}",
+                    background: "{styles::colors::ERROR}",
+                    corner_radius: "{styles::radius::SMALL}",
+                    label {
+                        color: "white",
+                        font_size: "{styles::fonts::NORMAL}",
+                        "{error}"
                     }
-                } else {
-                    rsx!{}
                 }
             }
 
-            {
-                if let Some(error) = &app_state.read().error_message {
-                    rsx! {
-                        div {
-                            class: "error-message",
-                            "{error}"
-                        }
-                    }
-                } else {
-                    rsx!{}
+            // Show either selection view or edit form
+            if editing() && selected_entry.is_some() {
+                EntryForm {
+                    entry: selected_entry.clone(),
+                    on_save: on_save,
+                    on_cancel: on_cancel
                 }
-            }
 
-            // Main content - either selection or edit form
-            if editing() {
-                // Edit form
-                if let Some(entry) = selected_entry {
-                    div {
-                        class: "edit-container",
-
-                        // Entry form
-                        EntryForm {
-                            entry: Some(entry.clone()),
-                            on_save: on_save,
-                            on_cancel: on_cancel
+                Button {
+                    onclick: move |_| {
+                        if let Some(entry) = &selected_entry {
+                            delete_entry(entry.id());
                         }
-
-                        // Delete button
-                        div {
-                            class: "delete-container",
-                            button {
-                                class: "button-danger",
-                                onclick: move |_| delete_entry(entry.id()),
-                                "Delete Entry"
-                            }
-                        }
-                    }
-                } else {
-                    // This shouldn't happen, but just in case
-                    div {
-                        class: "error-message",
-                        "No entry selected. Please go back and select an entry."
-                    }
-
-                    button {
-                        class: "button-secondary",
-                        onclick: move |_| editing.set(false),
-                        "Back to Selection"
-                    }
+                    },
+                    label { "Delete Entry" }
                 }
             } else {
                 // Selection view
-                div {
-                    class: "selection-container",
+                rect {
+                    width: "100%",
+                    direction: "horizontal",
+                    spacing: "{styles::spacing::LARGE}",
 
-                    // Left sidebar with filters
-                    div {
-                        class: "selection-sidebar",
-                        FilterPanel {
-                            on_apply: on_filter_apply
-                        }
+                    FilterPanel {
+                        on_apply: on_filter_apply
                     }
 
-                    // Main area with entries list
-                    div {
-                        class: "selection-main",
+                    // Entry list
+                    ScrollView {
+                        width: "fill",
+                        height: "600",
+                        show_scrollbar: true,
 
-                        if app_state.read().entries.is_empty() {
-                            div {
-                                class: "empty-state",
-                                p { "No entries found. Try adjusting your filters or add a new entry." }
-                                button {
-                                    class: "button-primary",
-                                    onclick: move |_| app_state.write().set_view(View::AddEntry),
-                                    "Add Entry"
+                        rect {
+                            direction: "vertical",
+                            spacing: "{styles::spacing::SMALL}",
+
+                            if entries.is_empty() {
+                                label {
+                                    color: "{styles::colors::TEXT_SECONDARY}",
+                                    "No entries found."
                                 }
-                            }
-                        } else {
-                            table {
-                                class: "entries-table",
+                            } else {
+                                for entry in entries.iter() {
+                                    rect {
+                                        width: "100%",
+                                        padding: "{styles::spacing::MEDIUM}",
+                                        background: "white",
+                                        corner_radius: "{styles::radius::SMALL}",
+                                        shadow: "0 1 3 0 {styles::colors::SHADOW}",
+                                        direction: "horizontal",
+                                        main_align: "spaceBetween",
+                                        cross_align: "center",
 
-                                thead {
-                                    tr {
-                                        th { "Date" }
-                                        th { "Name" }
-                                        th { "Type" }
-                                        th { "Amount" }
-                                        th { "Currency" }
-                                        th { "Tags" }
-                                        th { "Actions" }
-                                    }
-                                }
+                                        rect {
+                                            direction: "vertical",
+                                            spacing: "{styles::spacing::TINY}",
 
-                                tbody {
-                                    for entry in entries {
-                                        tr {
-                                            class: match entry.entry_type() {
-                                                EntryType::Income => "income-row",
-                                                EntryType::Expense => "expense-row",
-                                            },
-
-                                            td { "{entry.date().format(\"%Y-%m-%d\")}" }
-                                            td { "{entry.name()}" }
-                                            td { "{entry.entry_type()}" }
-                                            td { "{entry.amount()}" }
-                                            td { "{entry.currency_code()}" }
-                                            td {
-                                                class: "tag-cell",
-                                                for tag in entry.tags() {
-                                                    span { class: "tag-pill", "{tag.name()}" }
-                                                }
+                                            label {
+                                                font_size: "{styles::fonts::NORMAL}",
+                                                font_weight: "bold",
+                                                color: "{styles::colors::TEXT_PRIMARY}",
+                                                "{entry.name()}"
                                             }
-                                            td {
-                                                div {
-                                                    class: "action-buttons",
 
-                                                    button {
-                                                        class: "button-small",
-                                                        onclick: {
-                                                            let id = entry.id();
-                                                            move |_| select_entry(id)
-                                                        },
-                                                        "Edit"
-                                                    }
-
-                                                    button {
-                                                        class: "button-small button-danger",
-                                                        onclick: {
-                                                            let id = entry.id();
-                                                            move |_| delete_entry(id)
-                                                        },
-                                                        "Delete"
-                                                    }
-                                                }
+                                            label {
+                                                font_size: "{styles::fonts::SMALL}",
+                                                color: "{styles::colors::TEXT_SECONDARY}",
+                                                "{entry.date().format(\"%Y-%m-%d\")} • {entry.amount()} {entry.currency_code()}"
                                             }
+                                        }
+
+                                        Button {
+                                            onclick: move |_| select_entry(entry.id()),
+                                            label { "Edit" }
                                         }
                                     }
                                 }
@@ -298,3 +223,4 @@ pub fn EditEntryView() -> Element {
         }
     }
 }
+
