@@ -31,7 +31,7 @@ pub fn EntryForm(
             .map(|e| e.date().format("%Y-%m-%d").to_string())
             .unwrap_or_else(|| Utc::now().format("%Y-%m-%d").to_string())
     });
-
+    let have_entry = entry.is_some();
     let mut name = use_signal(|| entry.as_ref().map(|e| e.name().to_string()).unwrap_or_default());
 
     let mut entry_type = use_signal(|| {
@@ -109,7 +109,7 @@ pub fn EntryForm(
     };
 
     // Remove a tag from the list
-    let remove_tag = move |idx: usize| {
+    let mut remove_tag = move |idx: usize| {
         let mut new_tags = tags();
         if idx < new_tags.len() {
             new_tags.remove(idx);
@@ -395,7 +395,7 @@ pub fn EntryForm(
                 button {
                     class: "button-primary",
                     onclick: save,
-                    if entry.is_some() { "Update" } else { "Save" }
+                    if have_entry { "Update" } else { "Save" }
                 }
             }
         }

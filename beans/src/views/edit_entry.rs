@@ -40,7 +40,7 @@ pub fn EditEntryView() -> Element {
     };
 
     // Handle entry selection
-    let select_entry = move |id: Uuid| {
+    let mut select_entry = move |id: Uuid| {
         let mut state = app_state.write();
         state.selected_entry = Some(id);
         drop(state);
@@ -78,7 +78,7 @@ pub fn EditEntryView() -> Element {
     };
 
     // Handle delete action
-    let delete_entry = move |id: Uuid| {
+    let mut delete_entry = move |id: Uuid| {
         let mut state = app_state.write();
 
         // Delete the entry from the ledger
@@ -120,6 +120,7 @@ pub fn EditEntryView() -> Element {
         state.selected_entry = None;
         state.set_view(View::Overview);
     };
+    let entries = app_state.read().entries.clone().into_iter();
 
     rsx! {
         div {
@@ -245,7 +246,7 @@ pub fn EditEntryView() -> Element {
                                 }
 
                                 tbody {
-                                    for entry in app_state.read().entries.iter() {
+                                    for entry in entries {
                                         tr {
                                             class: match entry.entry_type() {
                                                 EntryType::Income => "income-row",
@@ -269,13 +270,19 @@ pub fn EditEntryView() -> Element {
 
                                                     button {
                                                         class: "button-small",
-                                                        onclick: move |_| select_entry(entry.id()),
+                                                        onclick: {
+                                                            let id = entry.id();
+                                                            move |_| select_entry(id)
+                                                        },
                                                         "Edit"
                                                     }
 
                                                     button {
                                                         class: "button-small button-danger",
-                                                        onclick: move |_| delete_entry(entry.id()),
+                                                        onclick: {
+                                                            let id = entry.id();
+                                                            move |_| delete_entry(id)
+                                                        },
                                                         "Delete"
                                                     }
                                                 }
