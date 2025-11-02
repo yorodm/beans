@@ -24,6 +24,20 @@ pub struct EntryFilter {
     pub offset: Option<usize>,
 }
 
+impl EntryFilter {
+    pub fn new() -> Self {
+        EntryFilter {
+            start_date: None,
+            end_date: None,
+            entry_type: None,
+            currency: None,
+            tags: Vec::new(),
+            limit: None,
+            offset: None,
+        }
+    }
+}
+
 /// Repository trait for ledger entry operations.
 pub trait Repository: std::fmt::Debug {
     /// Creates a new entry in the repository.

@@ -1,17 +1,17 @@
 //! Ribbon toolbar component
 
-use dioxus::prelude::*;
 use crate::state::{AppState, View};
+use dioxus::prelude::*;
 
 #[component]
 pub fn Ribbon() -> Element {
     let mut app_state = use_context::<Signal<AppState>>();
     let has_ledger = app_state.read().ledger_manager.is_some();
-    
+
     rsx! {
         div {
             class: "ribbon",
-            
+
             button {
                 class: "ribbon-button",
                 onclick: move |_| {
@@ -19,9 +19,9 @@ pub fn Ribbon() -> Element {
                 },
                 "📂 Open/Create Ledger"
             }
-            
+
             div { class: "ribbon-separator" }
-            
+
             button {
                 class: "ribbon-button",
                 disabled: !has_ledger,
@@ -30,7 +30,7 @@ pub fn Ribbon() -> Element {
                 },
                 "📊 Overview"
             }
-            
+
             button {
                 class: "ribbon-button",
                 disabled: !has_ledger,
@@ -39,7 +39,7 @@ pub fn Ribbon() -> Element {
                 },
                 "➕ Add Entry"
             }
-            
+
             button {
                 class: "ribbon-button",
                 disabled: !has_ledger,
@@ -48,7 +48,7 @@ pub fn Ribbon() -> Element {
                 },
                 "✏️ Edit Entry"
             }
-            
+
             button {
                 class: "ribbon-button",
                 disabled: !has_ledger,
@@ -57,7 +57,7 @@ pub fn Ribbon() -> Element {
                 },
                 "💾 Export Ledger"
             }
-            
+
             // Show current ledger name if one is open
             if let Some(path) = &app_state.read().ledger_path {
                 div {

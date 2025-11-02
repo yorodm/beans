@@ -67,48 +67,48 @@ impl AppState {
             success_message: None,
         }
     }
-    
+
     pub fn set_view(&mut self, view: View) {
         self.current_view = view;
         self.clear_messages();
     }
-    
+
     pub fn set_error(&mut self, message: String) {
         self.error_message = Some(message);
         self.success_message = None;
     }
-    
+
     pub fn set_success(&mut self, message: String) {
         self.success_message = Some(message);
         self.error_message = None;
     }
-    
+
     pub fn clear_messages(&mut self) {
         self.error_message = None;
         self.success_message = None;
     }
-    
+
     pub fn load_entries(&mut self) -> BeansResult<()> {
         if let Some(manager) = &self.ledger_manager {
             let mut filter_obj = EntryFilter::new();
-            
+
             if let Some(start) = self.filter.date_range.start {
-                filter_obj = filter_obj.with_start_date(start);
+                filter_obj.start_date = Some(start)
             }
-            
+
             if let Some(end) = self.filter.date_range.end {
-                filter_obj = filter_obj.with_end_date(end);
+                filter_obj.end_date = Some(end)
             }
-            
+
             for tag in &self.filter.tags {
-                filter_obj = filter_obj.with_tag(tag);
+                filter_obj.tags.push(tag.clone());
             }
-            
-            self.entries = manager.get_entries(Some(filter_obj))?;
+
+            self.entries = manager.list_entries(&filter_obj)?;
         }
         Ok(())
     }
-    
+
     pub fn open_ledger(&mut self, path: PathBuf) -> BeansResult<()> {
         let manager = LedgerManager::open(path.clone())?;
         self.ledger_manager = Some(manager);
@@ -117,9 +117,9 @@ impl AppState {
         self.set_view(View::Overview);
         Ok(())
     }
-    
+
     pub fn create_ledger(&mut self, path: PathBuf) -> BeansResult<()> {
-        let manager = LedgerManager::create(path.clone())?;
+        let manager = LedgerManager::open(path.clone())?;
         self.ledger_manager = Some(manager);
         self.ledger_path = Some(path);
         self.entries = Vec::new();
@@ -133,4 +133,3 @@ impl Default for AppState {
         Self::new()
     }
 }
-

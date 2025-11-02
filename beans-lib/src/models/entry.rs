@@ -58,7 +58,7 @@ impl FromStr for EntryType {
 }
 
 /// Represents a financial transaction in the ledger.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct LedgerEntry {
     /// Unique identifier for the entry.
     id: Uuid,

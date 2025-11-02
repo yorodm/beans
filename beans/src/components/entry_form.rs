@@ -1,7 +1,7 @@
 //! Entry form component stub - to be fully implemented
 
-use dioxus::prelude::*;
 use beans_lib::prelude::*;
+use dioxus::prelude::*;
 
 #[component]
 pub fn EntryForm(
