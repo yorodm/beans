@@ -1,13 +1,14 @@
 //! Ledger selection view - entry point to the application
 
 use crate::state::AppState;
+use beans_lib::BeansError;
 use dioxus::prelude::*;
 use std::path::PathBuf;
 
 #[component]
 pub fn LedgerSelectionView() -> Element {
     let mut app_state = use_context::<Signal<AppState>>();
-    
+
     // Local state for input fields
     let mut open_path = use_signal(|| String::new());
     let mut create_path = use_signal(|| String::new());
@@ -15,9 +16,9 @@ pub fn LedgerSelectionView() -> Element {
     // Handler for opening an existing ledger
     let handle_open = move |_| {
         app_state.write().clear_messages();
-        
-        let path_str = open_path.read().trim();
-        if path_str.is_empty() {
+
+        let path_str = open_path.read().clone();
+        if path_str.trim().is_empty() {
             app_state.write().set_error("Please enter a file path".to_string());
             return;
         }
@@ -30,7 +31,7 @@ pub fn LedgerSelectionView() -> Element {
         };
 
         let path = PathBuf::from(&final_path);
-        
+
         // Check if file exists
         if !path.exists() {
             app_state.write().set_error(format!("File does not exist: {}", final_path));
@@ -38,22 +39,26 @@ pub fn LedgerSelectionView() -> Element {
         }
 
         // Attempt to open the ledger
-        match app_state.write().open_ledger(path) {
+        let open_ledger: Result<String, BeansError>  = match app_state.write().open_ledger(path) {
             Ok(_) => {
-                app_state.write().set_success(format!("Successfully opened ledger: {}", final_path));
+                Ok(format!("Successfully opened ledger: {}", final_path))
             }
             Err(e) => {
-                app_state.write().set_error(format!("Failed to open ledger: {}", e));
+                Err(e)
             }
+        };
+        match open_ledger {
+            Ok(m) => app_state.write().set_success(m),
+            Err(e) => app_state.write().set_error(e.to_string()),
         }
     };
 
     // Handler for creating a new ledger
     let handle_create = move |_| {
         app_state.write().clear_messages();
-        
-        let path_str = create_path.read().trim();
-        if path_str.is_empty() {
+
+        let path_str = create_path.read().clone();
+        if path_str.trim().is_empty() {
             app_state.write().set_error("Please enter a file path".to_string());
             return;
         }
@@ -66,7 +71,7 @@ pub fn LedgerSelectionView() -> Element {
         };
 
         let path = PathBuf::from(&final_path);
-        
+
         // Check if file already exists
         if path.exists() {
             app_state.write().set_error(format!("File already exists: {}. Use 'Open Ledger' instead.", final_path));
@@ -74,20 +79,24 @@ pub fn LedgerSelectionView() -> Element {
         }
 
         // Attempt to create the ledger
-        match app_state.write().create_ledger(path) {
+        let create_ledger = match app_state.write().create_ledger(path) {
             Ok(_) => {
-                app_state.write().set_success(format!("Successfully created ledger: {}", final_path));
+                Ok(format!("Successfully created ledger: {}", final_path))
             }
             Err(e) => {
-                app_state.write().set_error(format!("Failed to create ledger: {}", e));
+                Err(e)
             }
+        };
+        match create_ledger {
+            Ok(m) => app_state.write().set_success(m),
+            Err(e) => app_state.write().set_error(e.to_string()),
         }
     };
 
     rsx! {
         div { class: "view",
             h1 { "Welcome to Beans 🫘" }
-            p { class: "subtitle", 
+            p { class: "subtitle",
                 "Manage your personal finances with ease. Open an existing ledger or create a new one to get started."
             }
 
@@ -101,12 +110,12 @@ pub fn LedgerSelectionView() -> Element {
 
             // Two-card layout for open vs create
             div { class: "ledger-actions",
-                
+
                 // Card for opening existing ledger
                 div { class: "action-card",
                     h2 { "📂 Open Existing Ledger" }
                     p { "Open a ledger file that you've previously created." }
-                    
+
                     div { class: "form-group",
                         label { r#for: "open-path", "File Path" }
                         input {
@@ -120,7 +129,7 @@ pub fn LedgerSelectionView() -> Element {
                             "Tip: .bean extension will be added automatically if missing"
                         }
                     }
-                    
+
                     button {
                         class: "button-primary",
                         onclick: handle_open,
@@ -132,7 +141,7 @@ pub fn LedgerSelectionView() -> Element {
                 div { class: "action-card",
                     h2 { "✨ Create New Ledger" }
                     p { "Start fresh with a new ledger file." }
-                    
+
                     div { class: "form-group",
                         label { r#for: "create-path", "File Path" }
                         input {
@@ -146,7 +155,7 @@ pub fn LedgerSelectionView() -> Element {
                             "Tip: .bean extension will be added automatically if missing"
                         }
                     }
-                    
+
                     button {
                         class: "button-primary",
                         onclick: handle_create,
@@ -159,7 +168,7 @@ pub fn LedgerSelectionView() -> Element {
             div { style: "margin-top: 32px; padding: 16px; background: #f9f9f9; border-radius: 6px;",
                 h3 { "💡 Getting Started" }
                 ul { style: "margin-left: 20px; margin-top: 8px;",
-                    li { style: "margin-bottom: 6px;", 
+                    li { style: "margin-bottom: 6px;",
                         "Ledger files use the ", code { ".bean" }, " extension"
                     }
                     li { style: "margin-bottom: 6px;",
