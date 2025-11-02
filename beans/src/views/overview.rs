@@ -64,6 +64,11 @@ pub fn OverviewView() -> Element {
         state.set_view(View::EditEntry);
     };
     
+    // Get default currency outside the rsx! macro
+    let default_currency = app_state.read().entries.first()
+        .map(|e| e.currency_code())
+        .unwrap_or_else(|| "USD".to_string());
+    
     rsx! {
         div {
             class: "view overview-view",
@@ -129,15 +134,10 @@ pub fn OverviewView() -> Element {
                                 }
                             }
                         } else {
-                            // Default currency from first entry
-                            let default_currency = app_state.read().entries.first()
-                                .map(|e| e.currency_code())
-                                .unwrap_or_else(|| "USD".to_string());
-                                
                             BarChart {
                                 income: income,
                                 expenses: expenses,
-                                currency: default_currency
+                                currency: default_currency.clone()
                             }
                             
                             // Show other currencies if present
@@ -215,7 +215,7 @@ pub fn OverviewView() -> Element {
                             }
                             
                             if app_state.read().entries.len() > 10 {
-                                p { class: "more-entries", "Showing 10 of {} entries. Use the Edit Entry view to see more.", app_state.read().entries.len() }
+                                p { class: "more-entries", "Showing 10 of {app_state.read().entries.len()} entries. Use the Edit Entry view to see more." }
                             }
                         }
                     }
