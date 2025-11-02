@@ -3,8 +3,10 @@
 use crate::components::filter_panel::FilterPanel;
 use crate::state::{AppState, View};
 use beans_lib::prelude::*;
+use beans_lib::reporting::{ExportFormat, ReportGenerator};
 use dioxus::prelude::*;
 use std::path::PathBuf;
+use chrono::Utc;
 
 /// Export View
 /// 
@@ -75,12 +77,50 @@ pub fn ExportView() -> Element {
                 filter.tags.push(tag.clone());
             }
             
-            // Generate report
-            let report_result = match format().as_str() {
-                "json" => manager.export_json(&filter),
-                "csv" => manager.export_csv(&filter),
-                _ => Err(BeansError::validation("Unsupported export format")),
+            // Create a ReportGenerator from the LedgerManager
+            let report_generator = ReportGenerator::new(manager);
+            
+            // Get the start and end dates from the filter
+            let start_date = filter.start_date.unwrap_or_else(|| {
+                // Default to 30 days ago if no start date
+                Utc::now() - chrono::Duration::days(30)
+            });
+            
+            let end_date = filter.end_date.unwrap_or_else(Utc::now);
+            
+            // Get the tags from the filter
+            let tags = if filter.tags.is_empty() {
+                None
+            } else {
+                Some(filter.tags.iter().map(|t| t.name().to_string()).collect())
             };
+            
+            // Use tokio runtime to run the async report generation
+            let export_format = match format().as_str() {
+                "json" => ExportFormat::Json,
+                "csv" => ExportFormat::Csv,
+                _ => {
+                    drop(state);
+                    app_state.write().set_error("Unsupported export format".to_string());
+                    return;
+                }
+            };
+            
+            // Use a blocking task to run the async report generation
+            let report_result = std::thread::spawn(move || {
+                // Create a new tokio runtime for this thread
+                let rt = tokio::runtime::Runtime::new().unwrap();
+                
+                rt.block_on(async {
+                    // Generate the appropriate report based on format
+                    let report = report_generator.tagged_report(start_date, end_date, None).await?;
+                    
+                    // Export the report to the selected format
+                    report_generator.export_tagged_report(&report, export_format)
+                })
+            })
+            .join()
+            .unwrap_or_else(|_| Err(BeansError::validation("Failed to generate report".to_string())));
             
             match report_result {
                 Ok(content) => {
