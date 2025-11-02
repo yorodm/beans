@@ -16,7 +16,9 @@ beans-lib = { path = "../beans-lib" }
 anyhow = { workspace = true }
 log = { workspace = true }
 env_logger = { workspace = true }
+chrono = { workspace = true }
+rust_decimal = { workspace = true }
 
-# UI dependencies will be added in Phase 2
-# ribir = "0.2"
-
+# Dioxus UI framework
+dioxus = { version = "0.6", features = ["desktop"] }
+dioxus-router = "0.6"
