@@ -1,6 +1,7 @@
 //! Entry form component for adding and editing ledger entries
 
 use beans_lib::prelude::*;
+use chrono::TimeZone;
 use dioxus::prelude::*;
 use rust_decimal::Decimal;
 use std::str::FromStr;
@@ -8,7 +9,7 @@ use std::str::FromStr;
 use crate::components::date_picker::DatePicker;
 
 /// EntryForm component for adding and editing ledger entries
-/// 
+///
 /// This component provides a form for creating or editing ledger entries with:
 /// - Date picker
 /// - Name input (required)
@@ -30,39 +31,39 @@ pub fn EntryForm(
             .map(|e| e.date().format("%Y-%m-%d").to_string())
             .unwrap_or_else(|| Utc::now().format("%Y-%m-%d").to_string())
     });
-    
+
     let mut name = use_signal(|| entry.as_ref().map(|e| e.name().to_string()).unwrap_or_default());
-    
+
     let mut entry_type = use_signal(|| {
         entry
             .as_ref()
             .map(|e| e.entry_type())
             .unwrap_or(EntryType::Expense)
     });
-    
+
     let mut amount = use_signal(|| {
         entry
             .as_ref()
             .map(|e| e.amount().to_string())
             .unwrap_or_default()
     });
-    
+
     let mut currency_code = use_signal(|| {
         entry
             .as_ref()
             .map(|e| e.currency_code())
             .unwrap_or_else(|| "USD".to_string())
     });
-    
+
     let mut description = use_signal(|| {
         entry
             .as_ref()
             .and_then(|e| e.description().map(|d| d.to_string()))
             .unwrap_or_default()
     });
-    
+
     let mut tag_input = use_signal(String::new);
-    
+
     let mut tags = use_signal(|| {
         entry
             .as_ref()
@@ -74,10 +75,10 @@ pub fn EntryForm(
             })
             .unwrap_or_default()
     });
-    
+
     // Error state
     let mut error_message = use_signal(String::new);
-    
+
     // Add a tag to the list
     let add_tag = move |_| {
         let tag_name = tag_input().trim().to_string();
@@ -87,13 +88,13 @@ pub fn EntryForm(
                 error_message.set("Tags can only contain letters, numbers, hyphens, and underscores".to_string());
                 return;
             }
-            
+
             // Check for spaces
             if tag_name.contains(' ') {
                 error_message.set("Tags cannot contain spaces".to_string());
                 return;
             }
-            
+
             // Add tag if it doesn't already exist
             let normalized = tag_name.to_lowercase();
             if !tags().iter().any(|t| t.to_lowercase() == normalized) {
@@ -101,12 +102,12 @@ pub fn EntryForm(
                 new_tags.push(normalized);
                 tags.set(new_tags);
             }
-            
+
             tag_input.set(String::new());
             error_message.set(String::new());
         }
     };
-    
+
     // Remove a tag from the list
     let remove_tag = move |idx: usize| {
         let mut new_tags = tags();
@@ -115,27 +116,27 @@ pub fn EntryForm(
             tags.set(new_tags);
         }
     };
-    
+
     // Handle form submission
     let save = move |_| {
         error_message.set(String::new());
-        
+
         // Validate required fields
         if name().trim().is_empty() {
             error_message.set("Name is required".to_string());
             return;
         }
-        
+
         if amount().trim().is_empty() {
             error_message.set("Amount is required".to_string());
             return;
         }
-        
+
         if currency_code().trim().is_empty() {
             error_message.set("Currency code is required".to_string());
             return;
         }
-        
+
         // Parse amount
         let amount_decimal = match Decimal::from_str(&amount()) {
             Ok(d) if d <= Decimal::ZERO => {
@@ -148,7 +149,7 @@ pub fn EntryForm(
                 return;
             }
         };
-        
+
         // Parse date
         let date_time = match chrono::NaiveDate::parse_from_str(&date(), "%Y-%m-%d") {
             Ok(d) => {
@@ -160,7 +161,7 @@ pub fn EntryForm(
                 return;
             }
         };
-        
+
         // Create tags
         let tag_objects = match tags()
             .iter()
@@ -173,7 +174,7 @@ pub fn EntryForm(
                 return;
             }
         };
-        
+
         // Build the entry
         let mut builder = LedgerEntryBuilder::new()
             .name(name())
@@ -182,17 +183,17 @@ pub fn EntryForm(
             .entry_type(entry_type())
             .date(date_time)
             .tags(tag_objects);
-            
+
         // Add description if present
         if !description().trim().is_empty() {
             builder = builder.description(description());
         }
-        
+
         // If editing an existing entry, preserve its ID and creation timestamp
         if let Some(existing) = &entry {
             builder = builder.id(existing.id()).created_at(existing.created_at());
         }
-        
+
         // Build the entry
         match builder.build() {
             Ok(entry) => {
@@ -203,11 +204,11 @@ pub fn EntryForm(
             }
         }
     };
-    
+
     rsx! {
         div {
             class: "entry-form",
-            
+
             // Error message
             {
                 if !error_message().is_empty() {
@@ -217,23 +218,25 @@ pub fn EntryForm(
                             "{error_message}"
                         }
                     }
+                } else {
+                    rsx!{}
                 }
             }
-            
+
             // Form fields
             div {
                 class: "form-grid",
-                
+
                 // Date
                 div {
                     class: "form-field",
                     DatePicker {
-                        label: "Date".into(),
+                        label: "Date".to_string(),
                         value: date(),
                         on_change: move |new_date| date.set(new_date)
                     }
                 }
-                
+
                 // Name
                 div {
                     class: "form-field",
@@ -249,7 +252,7 @@ pub fn EntryForm(
                         oninput: move |evt| name.set(evt.value().clone())
                     }
                 }
-                
+
                 // Entry Type
                 div {
                     class: "form-field",
@@ -259,7 +262,7 @@ pub fn EntryForm(
                     }
                     div {
                         class: "radio-group",
-                        
+
                         label {
                             class: "radio-label",
                             input {
@@ -270,7 +273,7 @@ pub fn EntryForm(
                             }
                             "Income"
                         }
-                        
+
                         label {
                             class: "radio-label",
                             input {
@@ -283,7 +286,7 @@ pub fn EntryForm(
                         }
                     }
                 }
-                
+
                 // Amount
                 div {
                     class: "form-field",
@@ -301,7 +304,7 @@ pub fn EntryForm(
                         oninput: move |evt| amount.set(evt.value().clone())
                     }
                 }
-                
+
                 // Currency
                 div {
                     class: "form-field",
@@ -321,7 +324,7 @@ pub fn EntryForm(
                         }
                     }
                 }
-                
+
                 // Description
                 div {
                     class: "form-field full-width",
@@ -336,7 +339,7 @@ pub fn EntryForm(
                         oninput: move |evt| description.set(evt.value().clone())
                     }
                 }
-                
+
                 // Tags
                 div {
                     class: "form-field full-width",
@@ -359,11 +362,11 @@ pub fn EntryForm(
                             "Add"
                         }
                     }
-                    
+
                     // Display current tags
                     div {
                         class: "tag-list",
-                        
+
                         for (idx, tag) in tags().iter().enumerate() {
                             div {
                                 class: "tag-item",
@@ -378,17 +381,17 @@ pub fn EntryForm(
                     }
                 }
             }
-            
+
             // Form actions
             div {
                 class: "form-actions",
-                
+
                 button {
                     class: "button-secondary",
                     onclick: move |_| on_cancel.call(()),
                     "Cancel"
                 }
-                
+
                 button {
                     class: "button-primary",
                     onclick: save,

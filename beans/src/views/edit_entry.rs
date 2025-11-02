@@ -7,17 +7,17 @@ use beans_lib::prelude::*;
 use dioxus::prelude::*;
 
 /// Edit Entry View
-/// 
+///
 /// This view provides a two-stage interface:
 /// 1. Selection stage: Filter and list entries, select one to edit
 /// 2. Edit stage: Use EntryForm to modify the selected entry
 #[component]
 pub fn EditEntryView() -> Element {
     let mut app_state = use_context::<Signal<AppState>>();
-    
+
     // Local state to track if we're in selection or edit mode
     let mut editing = use_signal(|| false);
-    
+
     // Get the selected entry if any
     let selected_entry = {
         let state = app_state.read();
@@ -27,18 +27,18 @@ pub fn EditEntryView() -> Element {
             None
         }
     };
-    
+
     // If we have a selected entry, go to edit mode
     if selected_entry.is_some() && !editing() {
         editing.set(true);
     }
-    
+
     // Handle filter apply
     let on_filter_apply = move |_| {
         // Filtering is handled by the FilterPanel component
         // We just need to refresh the view
     };
-    
+
     // Handle entry selection
     let select_entry = move |id: Uuid| {
         let mut state = app_state.write();
@@ -46,23 +46,23 @@ pub fn EditEntryView() -> Element {
         drop(state);
         editing.set(true);
     };
-    
+
     // Handle save action
     let on_save = move |entry: LedgerEntry| {
         let mut state = app_state.write();
-        
+
         // Update the entry in the ledger
         if let Some(manager) = &state.ledger_manager {
             match manager.update_entry(&entry) {
                 Ok(_) => {
                     // Set success message
                     state.set_success("Entry updated successfully".to_string());
-                    
+
                     // Reload entries
                     if let Err(e) = state.load_entries() {
                         state.set_error(format!("Failed to reload entries: {}", e));
                     }
-                    
+
                     // Clear selection and go back to selection mode
                     state.selected_entry = None;
                     drop(state);
@@ -76,23 +76,23 @@ pub fn EditEntryView() -> Element {
             state.set_error("No ledger is open".to_string());
         }
     };
-    
+
     // Handle delete action
     let delete_entry = move |id: Uuid| {
         let mut state = app_state.write();
-        
+
         // Delete the entry from the ledger
         if let Some(manager) = &state.ledger_manager {
             match manager.delete_entry(id) {
                 Ok(_) => {
                     // Set success message
                     state.set_success("Entry deleted successfully".to_string());
-                    
+
                     // Reload entries
                     if let Err(e) = state.load_entries() {
                         state.set_error(format!("Failed to reload entries: {}", e));
                     }
-                    
+
                     // Clear selection and go back to selection mode
                     state.selected_entry = None;
                     drop(state);
@@ -106,37 +106,37 @@ pub fn EditEntryView() -> Element {
             state.set_error("No ledger is open".to_string());
         }
     };
-    
+
     // Handle cancel action
     let on_cancel = move |_| {
         // Clear selection and go back to selection mode
         app_state.write().selected_entry = None;
         editing.set(false);
     };
-    
+
     // Handle back to overview
     let back_to_overview = move |_| {
         let mut state = app_state.write();
         state.selected_entry = None;
         state.set_view(View::Overview);
     };
-    
+
     rsx! {
         div {
             class: "view edit-entry-view",
-            
+
             // Header
             div {
                 class: "view-header",
                 h1 { if editing() { "Edit Entry" } else { "Select Entry to Edit" } }
-                
+
                 button {
                     class: "button-secondary back-button",
                     onclick: back_to_overview,
                     "Back to Overview"
                 }
             }
-            
+
             // Success/error messages
             {
                 if let Some(success) = &app_state.read().success_message {
@@ -146,9 +146,11 @@ pub fn EditEntryView() -> Element {
                             "{success}"
                         }
                     }
+                } else {
+                    rsx!{}
                 }
             }
-            
+
             {
                 if let Some(error) = &app_state.read().error_message {
                     rsx! {
@@ -157,23 +159,25 @@ pub fn EditEntryView() -> Element {
                             "{error}"
                         }
                     }
+                } else {
+                    rsx!{}
                 }
             }
-            
+
             // Main content - either selection or edit form
             if editing() {
                 // Edit form
                 if let Some(entry) = selected_entry {
                     div {
                         class: "edit-container",
-                        
+
                         // Entry form
                         EntryForm {
                             entry: Some(entry.clone()),
                             on_save: on_save,
                             on_cancel: on_cancel
                         }
-                        
+
                         // Delete button
                         div {
                             class: "delete-container",
@@ -190,7 +194,7 @@ pub fn EditEntryView() -> Element {
                         class: "error-message",
                         "No entry selected. Please go back and select an entry."
                     }
-                    
+
                     button {
                         class: "button-secondary",
                         onclick: move |_| editing.set(false),
@@ -201,7 +205,7 @@ pub fn EditEntryView() -> Element {
                 // Selection view
                 div {
                     class: "selection-container",
-                    
+
                     // Left sidebar with filters
                     div {
                         class: "selection-sidebar",
@@ -209,11 +213,11 @@ pub fn EditEntryView() -> Element {
                             on_apply: on_filter_apply
                         }
                     }
-                    
+
                     // Main area with entries list
                     div {
                         class: "selection-main",
-                        
+
                         if app_state.read().entries.is_empty() {
                             div {
                                 class: "empty-state",
@@ -227,7 +231,7 @@ pub fn EditEntryView() -> Element {
                         } else {
                             table {
                                 class: "entries-table",
-                                
+
                                 thead {
                                     tr {
                                         th { "Date" }
@@ -239,7 +243,7 @@ pub fn EditEntryView() -> Element {
                                         th { "Actions" }
                                     }
                                 }
-                                
+
                                 tbody {
                                     for entry in app_state.read().entries.iter() {
                                         tr {
@@ -247,7 +251,7 @@ pub fn EditEntryView() -> Element {
                                                 EntryType::Income => "income-row",
                                                 EntryType::Expense => "expense-row",
                                             },
-                                            
+
                                             td { "{entry.date().format(\"%Y-%m-%d\")}" }
                                             td { "{entry.name()}" }
                                             td { "{entry.entry_type()}" }
@@ -262,13 +266,13 @@ pub fn EditEntryView() -> Element {
                                             td {
                                                 div {
                                                     class: "action-buttons",
-                                                    
+
                                                     button {
                                                         class: "button-small",
                                                         onclick: move |_| select_entry(entry.id()),
                                                         "Edit"
                                                     }
-                                                    
+
                                                     button {
                                                         class: "button-small button-danger",
                                                         onclick: move |_| delete_entry(entry.id()),
