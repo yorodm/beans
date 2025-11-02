@@ -521,8 +521,7 @@ impl Repository for SQLiteRepository {
         let conn = self.conn.lock().unwrap();
 
         // Build the filtered query but change SELECT to COUNT(*)
-        let (_ , params) = self.build_filtered_query(filter);
-
+        let (_, params) = self.build_filtered_query(filter);
 
         // We need to replace the SELECT clause with COUNT(*)
         // Since sql_query_builder doesn't have a direct way to do this,
