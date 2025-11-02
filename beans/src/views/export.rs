@@ -270,9 +270,7 @@ pub fn ExportView() -> Element {
                         button {
                             class: "button-primary",
                             onclick: move |_| {
-                                spawn(async move|_| {
-                                    generate_report(()).await;
-                                });
+                                spawn(generate_report(()));
                             },
                             "Generate Report"
                         }
