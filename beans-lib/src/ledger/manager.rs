@@ -68,7 +68,6 @@ impl LedgerManager {
         let conn = repository.conn.lock().unwrap();
         initialize_schema(&conn)?;
         drop(conn);
-
         Ok(Self {
             repository: Box::new(repository),
         })
@@ -145,4 +144,5 @@ impl LedgerManager {
 
         Ok(())
     }
+
 }

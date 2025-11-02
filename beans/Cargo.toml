@@ -20,5 +20,5 @@ chrono = { workspace = true }
 rust_decimal = { workspace = true }
 
 # Dioxus UI framework
-dioxus = { version = "0.6", features = ["desktop"] }
-dioxus-router = "0.6"
+dioxus = { version = "0.7", features = ["desktop"] }
+dioxus-router = "0.7"

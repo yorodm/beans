@@ -58,6 +58,14 @@ pub fn Ribbon() -> Element {
                 "💾 Export Ledger"
             }
 
+            button {
+                class: "ribbon-button",
+                onclick: move |_| {
+                    std::process::exit(0)
+                },
+                "❌ Exit"
+            }
+
             // Show current ledger name if one is open
             if let Some(path) = &app_state.read().ledger_path {
                 div {

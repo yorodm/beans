@@ -13,7 +13,7 @@ fn main() {
 
     dioxus::LaunchBuilder::desktop()
         .with_cfg(
-            dioxus::desktop::Config::new().with_window(
+            dioxus::desktop::Config::default().with_menu(None).with_window(
                 dioxus::desktop::WindowBuilder::new()
                     .with_title("Beans - Ledger Manager")
                     .with_resizable(true)
