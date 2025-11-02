@@ -1,7 +1,5 @@
 //! Beans - Ledger application with Dioxus UI
 
-use dioxus::prelude::*;
-
 mod app;
 mod components;
 mod state;
