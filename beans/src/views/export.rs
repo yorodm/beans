@@ -72,7 +72,7 @@ pub fn Export(props: ExportProps) -> Element {
                 
                 // Parse currency
                 if !currency_filter.read().is_empty() {
-                    match Currency::from_str(&currency_filter.read()) {
+                    match Currency::try_from(currency_filter.read().as_str()) {
                         Ok(c) => db_filter.currency = Some(c),
                         Err(_) => {
                             state.set_error("Invalid currency".to_string());
@@ -661,4 +661,3 @@ pub fn Export(props: ExportProps) -> Element {
         }
     }
 }
-

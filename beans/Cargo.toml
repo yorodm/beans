@@ -19,8 +19,8 @@ env_logger = { workspace = true }
 
 # UI dependencies
 freya = "0.3"
-freya_native = "0.3"
-freya_components = "0.3"
+freya-winit = "0.3"
+freya-components = "0.3"
 dioxus-hooks = "0.4"
 chrono = { workspace = true }
 uuid = { workspace = true }

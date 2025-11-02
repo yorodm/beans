@@ -1,7 +1,7 @@
 use crate::state::AppState;
 use freya::prelude::*;
 use rfd::FileDialog;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 /// Properties for the OpenLedger component
 #[derive(Props, Clone, PartialEq)]
@@ -13,40 +13,66 @@ pub struct OpenLedgerProps {
 /// OpenLedger component for opening or creating a new ledger
 pub fn OpenLedger(props: OpenLedgerProps) -> Element {
     let OpenLedgerProps { state } = props;
-    let new_ledger_name = use_signal(|| String::new());
     
-    // Function to open an existing ledger file
+    // Form state for creating a new ledger
+    let new_ledger_name = use_signal(|| String::new());
+    let new_ledger_path = use_signal(|| String::from("/tmp"));
+    
+    // Open an existing ledger file
     let open_ledger = move || {
-        let file_path = FileDialog::new()
+        let file = FileDialog::new()
             .add_filter("Bean Ledger", &["bean"])
             .set_directory("/")
             .pick_file();
             
-        if let Some(path) = file_path {
-            match state.open_ledger(path) {
-                Ok(_) => {},
-                Err(e) => state.set_error(format!("Failed to open ledger: {}", e)),
+        if let Some(path) = file {
+            match state.open_ledger(path.clone()) {
+                Ok(_) => {
+                    // Successfully opened the ledger
+                }
+                Err(e) => {
+                    state.set_error(format!("Failed to open ledger: {}", e));
+                }
             }
         }
     };
     
-    // Function to create a new ledger file
+    // Browse for a directory to save the new ledger
+    let browse_directory = move || {
+        let dir = FileDialog::new()
+            .set_directory("/")
+            .pick_folder();
+            
+        if let Some(path) = dir {
+            new_ledger_path.set(path.to_string_lossy().to_string());
+        }
+    };
+    
+    // Create a new ledger
     let create_ledger = move || {
+        // Validate form
         if new_ledger_name.read().is_empty() {
-            state.set_error("Please enter a name for the new ledger".to_string());
+            state.set_error("Ledger name is required".to_string());
             return;
         }
         
-        let file_path = FileDialog::new()
-            .add_filter("Bean Ledger", &["bean"])
-            .set_directory("/")
-            .set_file_name(&format!("{}.bean", new_ledger_name.read()))
-            .save_file();
-            
-        if let Some(path) = file_path {
-            match state.create_ledger(path) {
-                Ok(_) => {},
-                Err(e) => state.set_error(format!("Failed to create ledger: {}", e)),
+        // Create the path
+        let path_str = format!("{}/{}.bean", new_ledger_path.read(), new_ledger_name.read());
+        let path = PathBuf::from(path_str);
+        
+        // Check if the file already exists
+        if path.exists() {
+            state.set_error("A ledger with this name already exists".to_string());
+            return;
+        }
+        
+        // Create the ledger
+        match state.create_ledger(path) {
+            Ok(_) => {
+                // Successfully created the ledger
+            }
+            Err(e) => {
+                state.set_error(format!("Failed to create ledger: {}", e));
             }
         }
     };
@@ -64,12 +90,13 @@ pub fn OpenLedger(props: OpenLedgerProps) -> Element {
                 font_size: "24px",
                 font_weight: "bold",
                 color: "rgb(50, 50, 50)",
-                "Beans Ledger"
+                "Open or Create Ledger"
             }
             
-            // Open existing ledger section
+            // Open existing ledger
             rect {
                 width: "100%",
+                max_width: "600px",
                 padding: "20px",
                 background: "rgb(240, 240, 240)",
                 border_radius: "5px",
@@ -91,7 +118,8 @@ pub fn OpenLedger(props: OpenLedgerProps) -> Element {
                 
                 rect {
                     width: "100%",
-                    main_align: "end",
+                    main_align: "center",
+                    margin_top: "10px",
                     
                     rect {
                         padding: "10px 20px",
@@ -103,15 +131,16 @@ pub fn OpenLedger(props: OpenLedgerProps) -> Element {
                         label {
                             color: "white",
                             font_size: "14px",
-                            "Browse..."
+                            "Browse for Ledger File"
                         }
                     }
                 }
             }
             
-            // Create new ledger section
+            // Create new ledger
             rect {
                 width: "100%",
+                max_width: "600px",
                 padding: "20px",
                 background: "rgb(240, 240, 240)",
                 border_radius: "5px",
@@ -125,34 +154,97 @@ pub fn OpenLedger(props: OpenLedgerProps) -> Element {
                     "Create New Ledger"
                 }
                 
-                label {
-                    font_size: "14px",
-                    color: "rgb(100, 100, 100)",
-                    "Enter a name for your new ledger"
-                }
-                
+                // Ledger name
                 rect {
                     width: "100%",
-                    height: "40px",
-                    padding: "0 10px",
-                    background: "white",
-                    border: "1px solid rgb(200, 200, 200)",
-                    border_radius: "4px",
+                    direction: "vertical",
+                    gap: "5px",
                     
-                    input {
-                        width: "100%",
-                        height: "100%",
+                    label {
                         font_size: "14px",
                         color: "rgb(50, 50, 50)",
-                        placeholder: "Ledger name",
-                        value: "{new_ledger_name}",
-                        oninput: move |e| new_ledger_name.set(e.value.clone()),
+                        "Ledger Name *"
+                    }
+                    
+                    rect {
+                        width: "100%",
+                        height: "40px",
+                        padding: "0 10px",
+                        background: "white",
+                        border: "1px solid rgb(200, 200, 200)",
+                        border_radius: "4px",
+                        
+                        input {
+                            width: "100%",
+                            height: "100%",
+                            font_size: "14px",
+                            color: "rgb(50, 50, 50)",
+                            placeholder: "Enter ledger name",
+                            value: "{new_ledger_name}",
+                            oninput: move |e| new_ledger_name.set(e.value.clone()),
+                        }
                     }
                 }
                 
+                // Ledger location
+                rect {
+                    width: "100%",
+                    direction: "vertical",
+                    gap: "5px",
+                    
+                    label {
+                        font_size: "14px",
+                        color: "rgb(50, 50, 50)",
+                        "Save Location"
+                    }
+                    
+                    rect {
+                        width: "100%",
+                        direction: "horizontal",
+                        gap: "10px",
+                        
+                        rect {
+                            width: "calc(100% - 120px)",
+                            height: "40px",
+                            padding: "0 10px",
+                            background: "white",
+                            border: "1px solid rgb(200, 200, 200)",
+                            border_radius: "4px",
+                            
+                            input {
+                                width: "100%",
+                                height: "100%",
+                                font_size: "14px",
+                                color: "rgb(50, 50, 50)",
+                                value: "{new_ledger_path}",
+                                oninput: move |e| new_ledger_path.set(e.value.clone()),
+                            }
+                        }
+                        
+                        rect {
+                            width: "110px",
+                            height: "40px",
+                            background: "rgb(100, 100, 100)",
+                            border_radius: "4px",
+                            main_align: "center",
+                            cross_align: "center",
+                            cursor: "pointer",
+                            onclick: move |_| browse_directory(),
+                            
+                            label {
+                                color: "white",
+                                font_size: "14px",
+                                "Browse"
+                            }
+                        }
+                    }
+                }
+                
+                // Create button
                 rect {
                     width: "100%",
                     main_align: "end",
+                    margin_top: "10px",
                     
                     rect {
                         padding: "10px 20px",
@@ -164,7 +256,7 @@ pub fn OpenLedger(props: OpenLedgerProps) -> Element {
                         label {
                             color: "white",
                             font_size: "14px",
-                            "Create"
+                            "Create Ledger"
                         }
                     }
                 }

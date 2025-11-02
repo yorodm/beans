@@ -6,7 +6,7 @@ use beans_lib::{
 use chrono::{Local, NaiveDate};
 use freya::prelude::*;
 use rust_decimal::Decimal;
-use std::str::FromStr;
+
 
 /// Properties for the AddEntry component
 #[derive(Props, Clone, PartialEq)]
@@ -48,7 +48,7 @@ pub fn AddEntry(props: AddEntryProps) -> Element {
         }
         
         // Parse amount
-        let amount_decimal = match Decimal::from_str(&amount.read()) {
+        let amount_decimal = match amount.read().parse::<Decimal>() {
             Ok(d) => d,
             Err(_) => {
                 state.set_error("Invalid amount".to_string());
@@ -57,7 +57,7 @@ pub fn AddEntry(props: AddEntryProps) -> Element {
         };
         
         // Parse currency
-        let currency_value = match Currency::from_str(&currency.read()) {
+        let currency_value = match Currency::try_from(currency.read().as_str()) {
             Ok(c) => c,
             Err(_) => {
                 state.set_error("Invalid currency".to_string());
@@ -488,4 +488,3 @@ pub fn AddEntry(props: AddEntryProps) -> Element {
         }
     }
 }
-

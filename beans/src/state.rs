@@ -1,10 +1,10 @@
 use beans_lib::{
     ledger::LedgerManager,
-    models::{Currency, EntryType, LedgerEntry, Tag},
+    models::{Currency, EntryType, LedgerEntry},
     reporting::ReportGenerator,
     BeansResult,
 };
-use chrono::{DateTime, NaiveDate, Utc};
+use chrono::NaiveDate;
 use dioxus_hooks::use_signal;
 use freya::prelude::*;
 use std::path::PathBuf;
@@ -52,6 +52,7 @@ impl Default for EntryFilter {
 }
 
 /// Represents the application state
+#[derive(Clone)]
 pub struct AppState {
     /// Current view
     pub current_view: Signal<AppView>,
