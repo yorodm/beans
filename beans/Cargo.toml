@@ -7,16 +7,42 @@ license.workspace = true
 repository.workspace = true
 description = "Beans - A multi-platform ledger application with UI"
 
+[lib]
+name = "beans_ui"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
 [[bin]]
 name = "beans"
 path = "src/main.rs"
+
+[build-dependencies]
+tauri-build = { version = "2.0", features = [] }
 
 [dependencies]
 beans-lib = { path = "../beans-lib" }
 anyhow = { workspace = true }
 log = { workspace = true }
 env_logger = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+chrono = { workspace = true }
+tokio = { workspace = true }
+uuid = { workspace = true }
 
-# UI dependencies will be added in Phase 2
-# ribir = "0.2"
+# Tauri dependencies
+tauri = { version = "2.0", features = ["devtools"] }
+tauri-plugin-dialog = "2.0"
+tauri-plugin-fs = "2.0"
 
+# Leptos dependencies
+leptos = { version = "0.7", features = ["csr"] }
+leptos_meta = { version = "0.7", features = ["csr"] }
+leptos_router = { version = "0.7", features = ["csr"] }
+wasm-bindgen = "0.2"
+serde-wasm-bindgen = "0.6"
+console_error_panic_hook = "0.1"
+web-sys = { version = "0.3", features = ["Window", "Document", "HtmlElement"] }
+
+[features]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]

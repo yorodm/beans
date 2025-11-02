@@ -11,7 +11,7 @@ A multi-platform ledger application built with Rust, designed for tracking incom
 - ✅ **Currency Conversion**: Convert between currencies using live exchange rates
 - ✅ **Reports & Analytics**: Generate income vs expense reports with time-series data
 - ✅ **Multi-Platform**: Works on Windows, macOS, and Linux
-- 🚧 **UI (Phase 2)**: Graphical interface using Ribir 0.2.x (coming soon)
+- ✅ **UI**: Graphical interface using Tauri 2.0 + Leptos 0.7 with ribbon toolbar
 
 ## Project Structure
 
@@ -33,8 +33,15 @@ beans/
 │   ├── tests/          # ✅ Integration tests for models, ledger, and currency
 │   └── examples/       # ✅ Comprehensive examples for all features
 └── beans/              # Binary crate (UI application)
-    └── src/
-        └── main.rs     # ✅ Placeholder (UI in Phase 2)
+    ├── src/
+    │   ├── main.rs     # ✅ Tauri application entry
+    │   ├── lib.rs      # ✅ Leptos frontend entry
+    │   ├── commands.rs # ✅ Tauri backend commands
+    │   ├── components/ # ✅ UI components (ribbon)
+    │   └── views/      # ✅ Application views
+    ├── style/          # ✅ CSS stylesheets
+    ├── tauri-conf/     # ✅ Tauri configuration
+    └── index.html      # ✅ HTML entry point
 ```
 
 ## Development Status
@@ -57,14 +64,16 @@ beans/
 - 🚧 Reporting and analytics
 - 🚧 Additional unit and integration tests
 
-### Phase 2: UI Implementation (Planned)
+### Phase 2: UI Implementation (Complete)
 
-- [ ] Ribir 0.2.x integration
-- [ ] Entry management UI
-- [ ] Filtering and search UI
-- [ ] Graph visualization for income/expenses
-- [ ] Currency conversion UI
-- [ ] Settings and preferences
+- ✅ Tauri 2.0 + Leptos 0.7 integration
+- ✅ Ribbon-style toolbar for navigation
+- ✅ Overview with income vs expenses bar chart
+- ✅ Add entry form with validation
+- ✅ Edit/delete entry interface
+- ✅ Export functionality (JSON, CSV)
+- ✅ Filtering by date range and tags
+- ✅ Responsive design with custom styling
 
 ## Development Environment
 
@@ -101,22 +110,35 @@ If you prefer not to use Nix, you'll need to install the following dependencies 
 
 ## Building
 
+### Library Only
 ```bash
 # Build the library
 cargo build --lib
 
-# Build the binary (placeholder for now)
-cargo build --bin beans
-
-# Run tests (once implemented)
+# Run tests
 cargo test
 
 # Build documentation
 cargo doc --open
-
-# Development with auto-reload
-cargo watch -x run
 ```
+
+### UI Application
+```bash
+# Prerequisites
+cargo install tauri-cli --version "^2.0.0"
+cargo install trunk
+rustup target add wasm32-unknown-unknown
+
+# Development mode (with hot reload)
+cd beans
+cargo tauri dev
+
+# Production build
+cd beans
+cargo tauri build
+```
+
+See [beans/SETUP.md](beans/SETUP.md) for detailed UI setup instructions.
 
 ## Architecture
 
@@ -186,14 +208,16 @@ While AI provided significant assistance, all code has been reviewed and validat
 3. ✅ Implement database layer with SQLite
 4. ✅ Implement ledger manager service
 5. ✅ Implement currency conversion with external API
-6. 🚧 Implement reporting and analytics
-7. 🚧 Add comprehensive tests (unit + integration)
-8. ✅ Write documentation and examples
-9. [ ] Review and refine Phase 1
-10. [ ] Implement UI with Ribir 0.2.x
-11. [ ] Add graph visualization
-12. [ ] Package and distribute
+6. ✅ Implement reporting and analytics
+7. ✅ Write documentation and examples
+8. ✅ Implement UI with Tauri 2.0 + Leptos 0.7
+9. ✅ Add ribbon toolbar and navigation
+10. ✅ Add graph visualization for income/expenses
+11. ✅ Add entry management (add/edit/delete)
+12. ✅ Add export functionality
+13. 🚧 Add comprehensive tests (unit + integration)
+14. [ ] Package and distribute binaries
 
 ---
 
-**Status**: Phase 1 - Core Library Development (In Progress, ~70% Complete)
+**Status**: Phase 2 Complete - UI Implementation Finished (~90% Complete)

@@ -45,3 +45,13 @@ result-*
 
 # Logs
 *.log
+
+# Tauri specific
+beans/src-tauri/target/
+beans/dist/
+beans/pkg/
+
+# WASM and frontend builds
+*.wasm
+node_modules/
+.trunk/
