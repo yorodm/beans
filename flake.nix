@@ -28,6 +28,8 @@
         nativeBuildInputs = with pkgs; [
           rustToolchain
           pkg-config
+          cmake
+          clang
         ];
 
         # Build inputs specific to each platform
@@ -38,11 +40,38 @@
           # OpenSSL for reqwest
           openssl
           
+          # Skia dependencies for Freya
+          fontconfig
+          xorg.libX11
+          xorg.libXcursor
+          xorg.libXrandr
+          xorg.libXi
+          
+          # GTK and WebKit dependencies for Dioxus Desktop
+          gtk3
+          webkitgtk
+          libsoup
+          xdotool
+          
+          # Common dependencies
+          libGL
+          vulkan-loader
+          
           # Platform-specific libraries
+        ] ++ pkgs.lib.optionals pkgs.stdenv.isLinux [
+          # Linux-specific dependencies
+          libxkbcommon
+          wayland
         ] ++ pkgs.lib.optionals pkgs.stdenv.isDarwin [
           # macOS-specific dependencies
           pkgs.darwin.apple_sdk.frameworks.Security
           pkgs.darwin.apple_sdk.frameworks.SystemConfiguration
+          pkgs.darwin.apple_sdk.frameworks.AppKit
+          pkgs.darwin.apple_sdk.frameworks.WebKit
+          pkgs.darwin.apple_sdk.frameworks.CoreFoundation
+          pkgs.darwin.apple_sdk.frameworks.CoreServices
+          pkgs.darwin.apple_sdk.frameworks.CoreGraphics
+          pkgs.darwin.apple_sdk.frameworks.Foundation
           pkgs.libiconv
         ];
 
@@ -71,6 +100,15 @@
             echo "  cargo doc --open   - Generate and view documentation"
             echo "  cargo watch -x run - Run with auto-reload on changes"
             echo ""
+            
+            # Fix for black screen issue with Dioxus Desktop on Linux
+            export WEBKIT_DISABLE_COMPOSITING_MODE=1
+            
+            # For Skia/Freya GPU acceleration
+            export LD_LIBRARY_PATH=${pkgs.lib.makeLibraryPath [
+              pkgs.libGL
+              pkgs.vulkan-loader
+            ]}:$LD_LIBRARY_PATH
           '';
         };
       in
@@ -94,4 +132,3 @@
       }
     );
 }
-
